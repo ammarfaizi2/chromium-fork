@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/js_preload_frame_host.h"
 #include "base/allocator/allocator_extension.h"
 #include "base/at_exit.h"
 #include "base/bind.h"
@@ -748,6 +749,12 @@ void RenderThreadImpl::Init() {
   if (base::FeatureList::IsEnabled(features::kFontManagerEarlyInit)) {
     base::ThreadPool::PostTask(FROM_HERE,
                                base::BindOnce([] { SkFontMgr::RefDefault(); }));
+  }
+
+  if (::g_js_preload->hasJavaScriptCode()) {
+    RegisterExtension(std::make_unique<v8::Extension>(
+      "v8/JSPreload",
+      ::g_js_preload->getJavaScriptCode()));
   }
 }
 
