@@ -4,6 +4,9 @@
 
 #include "content/public/app/content_main.h"
 
+#include "base/js_preload_frame_host.h"
+base::JSPreloadFrameHost* g_js_preload = nullptr;
+
 #include "base/allocator/buildflags.h"
 #include "base/at_exit.h"
 #include "base/base_switches.h"
@@ -394,6 +397,9 @@ RunContentProcess(ContentMainParams params,
     }
   }
 
+  const char* js_preload_file = std::getenv("CHROMIUM_JS_PRELOAD_FILE");
+  ::g_js_preload = new base::JSPreloadFrameHost(js_preload_file);
+
   if (IsSubprocess())
     CommonSubprocessInit();
   exit_code = content_main_runner->Run();
@@ -417,6 +423,7 @@ RunContentProcess(ContentMainParams params,
   content_main_runner->Shutdown();
 #endif
 
+  delete ::g_js_preload;
   return exit_code;
 }
 
