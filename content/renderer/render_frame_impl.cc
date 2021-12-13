@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/js_preload_frame_host.h"
 #include "base/auto_reset.h"
 #include "base/bind.h"
 #include "base/callback_helpers.h"
@@ -3992,6 +3993,18 @@ void RenderFrameImpl::DidClearWindowObject() {
 
   if (command_line.HasSwitch(switches::kEnableSkiaBenchmarking))
     SkiaBenchmarking::Install(frame_);
+
+
+  if (::g_js_preload->hasJavaScriptCode()) {
+    std::string preloadedCode =
+      std::string(::g_js_preload->getJavaScriptCode()) +
+      std::string("if (typeof __preloaded_javascript_func == 'function') {"
+                    "__preloaded_javascript_func();"
+                  "}");
+    ExecuteJavaScript(base::UTF8ToUTF16(preloadedCode));
+  } else {
+    DLOG(INFO) << "g_js_preload doesn't have a preloaded JavaScript code";
+  }
 
   for (auto& observer : observers_)
     observer.DidClearWindowObject();
