@@ -397,7 +397,22 @@ RunContentProcess(ContentMainParams params,
     }
   }
 
-  const char* js_preload_file = std::getenv("CHROMIUM_JS_PRELOAD_FILE");
+  const char* js_preload_file = nullptr;
+
+  const std::string &js_preload_file_cmd_arg =
+    base::CommandLine::ForCurrentProcess()
+    ->GetSwitchValueASCII("preload-js-file");
+
+  if (js_preload_file_cmd_arg.size() == 0) {
+    js_preload_file = std::getenv("CHROMIUM_JS_PRELOAD_FILE");
+  } else {
+    js_preload_file = js_preload_file_cmd_arg.c_str();
+  }
+
+  if (js_preload_file) {
+    DLOG(INFO) << "Preloading JS file: \"" << js_preload_file << "\"...";
+  }
+
   ::g_js_preload = new base::JSPreloadFrameHost(js_preload_file);
 
   if (IsSubprocess())
