@@ -412,6 +412,54 @@ void ToolbarView::Init() {
       button->set_tag(GetViewCommandMap().at(button->GetID()));
   }
 
+  if (left_side_panel_button_)
+    left_side_panel_button_->SetVisible(false);
+
+  if (back_)
+    back_->SetVisible(false);
+
+  if (forward_)
+    forward_->SetVisible(false);
+
+  if (reload_)
+    reload_->SetVisible(false);
+
+  if (home_)
+    home_->SetVisible(false);
+
+  if (custom_tab_bar_)
+    custom_tab_bar_->SetVisible(false);
+
+  if (location_bar_)
+    location_bar_->SetVisible(false);
+
+  if (extensions_container_)
+    extensions_container_->SetVisible(false);
+
+  if (chrome_labs_button_)
+    chrome_labs_button_->SetVisible(false);
+
+  if (cast_)
+    cast_->SetVisible(false);
+
+  if (side_panel_button_)
+    side_panel_button_->SetVisible(false);
+
+  if (toolbar_account_icon_container_)
+    toolbar_account_icon_container_->SetVisible(false);
+
+  if (avatar_)
+    avatar_->SetVisible(false);
+
+  if (media_button_)
+    media_button_->SetVisible(false);
+
+  if (send_tab_to_self_button_)
+    send_tab_to_self_button_->SetVisible(false);
+
+  if (app_menu_button_)
+    app_menu_button_->SetVisible(false);
+
   initialized_ = true;
 }
 
