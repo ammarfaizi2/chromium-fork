@@ -99,7 +99,7 @@ fi
 distro_codename=$(lsb_release --codename --short)
 distro_id=$(lsb_release --id --short)
 # TODO(crbug.com/1199405): Remove 14.04 (trusty) and 16.04 (xenial).
-supported_codenames="(trusty|xenial|bionic|disco|eoan|focal|groovy)"
+supported_codenames="(trusty|xenial|bionic|disco|eoan|focal|groovy|impish)"
 supported_ids="(Debian)"
 if [ 0 -eq "${do_unsupported-0}" ] && [ 0 -eq "${do_quick_check-0}" ] ; then
   if [[ ! $distro_codename =~ $supported_codenames &&
