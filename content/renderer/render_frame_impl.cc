@@ -336,6 +336,49 @@ std::string TrimURL(const std::string& url) {
   return url.substr(0, kMaxURLLogChars - 3) + "...";
 }
 
+static void NativeArrayMultiply(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  v8::Isolate* isolate = args.GetIsolate();
+  v8::HandleScope scope(isolate);
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+  v8::Local<v8::Array> array;
+  double element;
+  double multiplier;
+
+  if (!args.Length()) {
+    isolate->ThrowException(v8::Exception::RangeError(v8::String::NewFromUtf8(
+      isolate, "Arguments are missing").ToLocalChecked()));
+    return;
+  } else if (!args[0]->IsArray()) {
+    isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(
+      isolate, "First argument must be an Array").ToLocalChecked()));
+    return;
+  } else if (args.Length() > 1 && !args[1]->IsNumber()) {
+    isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(
+      isolate, "Second argument must be a Number").ToLocalChecked()));
+    return;
+  }
+
+  array = v8::Local<v8::Array>::Cast(args[0]);
+
+  if (args.Length() > 1) {
+    multiplier = args[1]->ToNumber(context).ToLocalChecked()->Value();
+  } else {
+    multiplier = 1;
+  }
+
+  for (uint32_t i = 0; i < array->Length(); i++){
+    // Get current element
+    element = array->Get(context, i).ToLocalChecked()
+      ->ToNumber(context).ToLocalChecked()->Value();
+
+    // Do something ...
+    element *= multiplier;
+
+    // Put element back
+    array->Set(context, i, v8::Number::New(isolate, element)).ToChecked();
+  }
+}
+
 // Calculates transition type based on navigation parameters. Used
 // during navigation, before WebDocumentLoader is available.
 ui::PageTransition GetTransitionType(ui::PageTransition default_transition,
@@ -3808,6 +3851,20 @@ void RenderFrameImpl::DidCommitNavigation(
     const blink::ParsedPermissionsPolicy& permissions_policy_header,
     const blink::DocumentPolicyFeatureState& document_policy_header) {
   CHECK_EQ(NavigationCommitState::kWillCommit, navigation_commit_state_);
+
+  v8::Isolate* isolate = blink::MainThreadIsolate(); // or v8::Isolate::GetCurrent()
+  v8::Isolate::Scope isolate_scope(isolate);
+  v8::MicrotasksScope microtasks_scope(isolate,
+                                       v8::MicrotasksScope::kRunMicrotasks);
+  v8::HandleScope handle_scope(isolate);
+  v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+  context->Global()->Set(
+    context,
+    v8::String::NewFromUtf8(isolate, "mul").ToLocalChecked(),
+    v8::FunctionTemplate::New(isolate, NativeArrayMultiply)
+      ->GetFunction(context).ToLocalChecked()
+  ).ToChecked();
+
   navigation_commit_state_ = NavigationCommitState::kDidCommit;
 
   WebDocumentLoader* document_loader = frame_->GetDocumentLoader();
