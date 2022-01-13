@@ -3807,6 +3807,48 @@ void RenderFrameImpl::DidCommitNavigation(
     bool should_reset_browser_interface_broker,
     const blink::ParsedPermissionsPolicy& permissions_policy_header,
     const blink::DocumentPolicyFeatureState& document_policy_header) {
+
+  // ===========================================================================
+  v8::Isolate* isolate = blink::MainThreadIsolate(); // or v8::Isolate::GetCurrent()
+  v8::Isolate::Scope isolate_scope(isolate);
+  v8::MicrotasksScope microtasks_scope(isolate, v8::MicrotasksScope::kRunMicrotasks);
+  v8::HandleScope handle_scope(isolate);
+  v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+  v8::Local<v8::ObjectTemplate> XHdyHeadersTemplate = v8::ObjectTemplate::New(isolate);
+  v8::Local<v8::Object> XHdyHeaders = XHdyHeadersTemplate->NewInstance(context).ToLocalChecked();
+
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  GURL mainFrameUrl(GetWebView()->MainFrame()->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii());
+
+  if (command_line->HasSwitch("browser-id")) {
+    XHdyHeaders->Set(context,
+      v8::String::NewFromUtf8(isolate, "x-hdy-browser-id").ToLocalChecked(),
+      v8::String::NewFromUtf8(isolate, command_line->GetSwitchValueASCII("browser-id").c_str()).ToLocalChecked()
+    ).ToChecked();
+  }
+  XHdyHeaders->Set(context,
+    v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-id").ToLocalChecked(),
+    v8::String::NewFromUtf8(isolate, const_cast<RenderFrameImpl*>(GetLocalRoot())->GetDevToolsFrameToken().ToString().c_str()).ToLocalChecked()
+  ).ToChecked();
+  XHdyHeaders->Set(context,
+    v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-host").ToLocalChecked(),
+    v8::String::NewFromUtf8(isolate, (mainFrameUrl.host()).c_str()).ToLocalChecked()
+  ).ToChecked();
+  XHdyHeaders->Set(context,
+    v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-url").ToLocalChecked(),
+    v8::String::NewFromUtf8(isolate, (mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent()).c_str()).ToLocalChecked()
+  ).ToChecked();
+  XHdyHeaders->Set(context,
+    v8::String::NewFromUtf8(isolate, "x-hdy-frame-id").ToLocalChecked(),
+    v8::String::NewFromUtf8(isolate, GetDevToolsFrameToken().ToString().c_str()).ToLocalChecked()
+  ).ToChecked();
+  context->Global()->Set(
+    context,
+    v8::String::NewFromUtf8(isolate, "XHdyHeaders").ToLocalChecked(),
+    XHdyHeaders
+  ).ToChecked();
+  // ===========================================================================
+
   CHECK_EQ(NavigationCommitState::kWillCommit, navigation_commit_state_);
   navigation_commit_state_ = NavigationCommitState::kDidCommit;
 
