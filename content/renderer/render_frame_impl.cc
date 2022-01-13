@@ -4067,6 +4067,11 @@ void RenderFrameImpl::DidClearWindowObject() {
   if (command_line.HasSwitch(switches::kEnableSkiaBenchmarking))
     SkiaBenchmarking::Install(frame_);
 
+  ExecuteJavaScript(base::UTF8ToUTF16(std::string(
+    "if (typeof __preloaded_javascript_func == 'function') {"
+      "__preloaded_javascript_func();"
+    "}")));
+
   for (auto& observer : observers_)
     observer.DidClearWindowObject();
 }
