@@ -177,6 +177,28 @@ std::unique_ptr<ResourceRequest> CreatePreflightRequest(
   // URL Request.
   preflight_request->net_log_create_info = net_log_source_for_preflight;
 
+  // ===========================================================================
+  std::string browser_id;
+  std::string main_frame_id;
+  std::string main_frame_host;
+  std::string main_frame_url;
+  std::string frame_id;
+  if (request.headers.GetHeader("x-hdy-browser-id", &browser_id)) {
+    preflight_request->headers.SetHeader("x-hdy-browser-id", browser_id);
+  }
+  if (request.headers.GetHeader("x-hdy-main-frame-host", &main_frame_host)) {
+    preflight_request->headers.SetHeader("x-hdy-main-frame-host", main_frame_host);
+  }
+  if (request.headers.GetHeader("x-hdy-main-frame-url", &main_frame_url)) {
+    preflight_request->headers.SetHeader("x-hdy-main-frame-url", main_frame_url);
+  }
+  if (request.headers.GetHeader("x-hdy-main-frame-id", &main_frame_id)) {
+    preflight_request->headers.SetHeader("x-hdy-main-frame-id", main_frame_id);
+  }
+  if (request.headers.GetHeader("x-hdy-frame-id", &frame_id)) {
+    preflight_request->headers.SetHeader("x-hdy-frame-id", frame_id);
+  }
+  // ===========================================================================
   return preflight_request;
 }
 
