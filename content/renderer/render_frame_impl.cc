@@ -1380,6 +1380,18 @@ class RenderFrameImpl::FrameURLLoaderFactory
     // This should not be called if the frame is detached.
     DCHECK(frame_);
 
+    // =========================================================================
+    const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+    GURL mainFrameUrl(frame_->GetWebView()->MainFrame()->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii());
+    if (command_line->HasSwitch("browser-id")) {
+      const_cast<blink::WebURLRequest&>(request).SetHttpHeaderField("x-hdy-browser-id", blink::WebString::FromASCII(command_line->GetSwitchValueASCII("browser-id")));
+    }
+    const_cast<blink::WebURLRequest&>(request).SetHttpHeaderField("x-hdy-main-frame-host", blink::WebString::FromASCII(mainFrameUrl.host()));
+    const_cast<blink::WebURLRequest&>(request).SetHttpHeaderField("x-hdy-main-frame-url", blink::WebString::FromASCII(mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent()));
+    const_cast<blink::WebURLRequest&>(request).SetHttpHeaderField("x-hdy-main-frame-id",  blink::WebString::FromASCII(const_cast<RenderFrameImpl*>(frame_->GetLocalRoot())->GetDevToolsFrameToken().ToString()));
+    const_cast<blink::WebURLRequest&>(request).SetHttpHeaderField("x-hdy-frame-id", blink::WebString::FromASCII(frame_->GetDevToolsFrameToken().ToString()));
+    // =========================================================================
+
     std::vector<std::string> cors_exempt_header_list =
         RenderThreadImpl::current()->cors_exempt_header_list();
     blink::WebVector<blink::WebString> web_cors_exempt_header_list(
@@ -4346,6 +4358,19 @@ void RenderFrameImpl::WillSendRequest(blink::WebURLRequest& request,
   // a navigation concept. We pass ui::PAGE_TRANSITION_LINK as default one.
   WillSendRequestInternal(request, /*for_main_frame=*/false,
                           ui::PAGE_TRANSITION_LINK, for_redirect);
+
+  // ===========================================================================
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  GURL mainFrameUrl(GetWebView()->MainFrame()->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii());
+  if (command_line->HasSwitch("browser-id")) {
+    request.SetHttpHeaderField("x-hdy-browser-id", blink::WebString::FromASCII(command_line->GetSwitchValueASCII("browser-id")));
+  }
+  request.SetHttpHeaderField("x-hdy-main-frame-host", blink::WebString::FromASCII(mainFrameUrl.host()));
+  request.SetHttpHeaderField("x-hdy-main-frame-url", blink::WebString::FromASCII(mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent()));
+  request.SetHttpHeaderField("x-hdy-main-frame-id",  blink::WebString::FromASCII(const_cast<RenderFrameImpl*>(GetLocalRoot())->GetDevToolsFrameToken().ToString()));
+  request.SetHttpHeaderField("x-hdy-frame-id", blink::WebString::FromASCII(GetDevToolsFrameToken().ToString()));
+  // ===========================================================================
+
 #if !defined(OS_ANDROID)
   for (auto& observer : observers_) {
     observer.WillSendRequest(request);
@@ -5793,6 +5818,19 @@ void RenderFrameImpl::BeginNavigationInternal(
   browser_side_navigation_pending_ = true;
 
   blink::WebURLRequest& request = info->url_request;
+
+  // ===========================================================================
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  GURL mainFrameUrl(GetWebView()->MainFrame()->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii());
+  if (command_line->HasSwitch("browser-id")) {
+    request.SetHttpHeaderField("x-hdy-browser-id", blink::WebString::FromASCII(command_line->GetSwitchValueASCII("browser-id")));
+  }
+  request.SetHttpHeaderField("x-hdy-main-frame-host", blink::WebString::FromASCII(mainFrameUrl.host()));
+  request.SetHttpHeaderField("x-hdy-main-frame-url", blink::WebString::FromASCII(mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent()));
+  request.SetHttpHeaderField("x-hdy-main-frame-id",  blink::WebString::FromASCII(const_cast<RenderFrameImpl*>(GetLocalRoot())->GetDevToolsFrameToken().ToString()));
+  request.SetHttpHeaderField("x-hdy-frame-id", blink::WebString::FromASCII(GetDevToolsFrameToken().ToString()));
+  // ===========================================================================
+
 
   // Set SiteForCookies.
   WebDocument frame_document = frame_->GetDocument();
