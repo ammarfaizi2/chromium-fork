@@ -3285,6 +3285,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
   // Propagate the following switches to the renderer command line (along
   // with any associated values) if present in the browser command line.
   static const char* const kSwitchNames[] = {
+    "browser-id",
     switches::kDisableInProcessStackTraces,
     sandbox::policy::switches::kDisableSeccompFilterSandbox,
     sandbox::policy::switches::kNoSandbox,

@@ -56,6 +56,12 @@ constexpr net::NetworkTrafficAnnotationTag kTrafficAnnotation =
         })");
 }
 
+void WebSocketConnectorImpl::AddHdyHeader(const std::string& field,
+                                          const std::string& value) {
+  hdy_header_fields.push_back(field);
+  hdy_header_values.push_back(value);
+}
+
 WebSocketConnectorImpl::WebSocketConnectorImpl(
     int process_id,
     int frame_id,
@@ -97,6 +103,11 @@ void WebSocketConnectorImpl::Connect(
     return;
   }
   std::vector<network::mojom::HttpHeaderPtr> headers;
+
+  for (std::size_t i = 0; i < hdy_header_fields.size(); ++i) {
+    headers.push_back(network::mojom::HttpHeader::New(hdy_header_fields[i],
+                                                      hdy_header_values[i]));
+  }
   if (user_agent) {
     headers.push_back(network::mojom::HttpHeader::New(
         net::HttpRequestHeaders::kUserAgent, *user_agent));

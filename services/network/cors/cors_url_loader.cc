@@ -5,6 +5,7 @@
 #include "services/network/cors/cors_url_loader.h"
 
 #include "base/bind.h"
+#include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/containers/flat_set.h"
 #include "base/feature_list.h"
@@ -643,6 +644,13 @@ void CorsURLLoader::StartRequest() {
         CorsErrorStatus(mojom::CorsError::kCorsDisabledScheme)));
     return;
   }
+
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch("browser-id")) {
+    request_.headers.SetHeader("x-hdy-browser-id", command_line->GetSwitchValueASCII("browser-id"));
+  }
+  request_.headers.SetHeaderIfMissing("x-hdy-main-frame-host", request_.url.host());
+  request_.headers.SetHeaderIfMissing("x-hdy-main-frame-url", request_.url.scheme() + "://" + request_.url.GetContent());
 
   // If the `CORS flag` is set, `httpRequest`’s method is neither `GET` nor
   // `HEAD`, or `httpRequest`’s mode is "websocket", then append

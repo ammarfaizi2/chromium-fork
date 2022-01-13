@@ -216,6 +216,19 @@ std::unique_ptr<URLRequestJob> URLRequestHttpJob::Create(URLRequest* request) {
 #endif
   }
 
+  // if (base::TaskEnabled("28")) {
+    const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+    GURL mainFrameUrl;
+    if (request->initiator()) {
+      mainFrameUrl = GURL(request->initiator()->GetURL());
+    }
+    if (command_line->HasSwitch("browser-id")) {
+      const_cast<net::HttpRequestHeaders&>(request->extra_request_headers()).SetHeader("x-hdy-browser-id", command_line->GetSwitchValueASCII("browser-id"));
+    }
+    const_cast<net::HttpRequestHeaders&>(request->extra_request_headers()).SetHeader("x-hdy-main-frame-host", mainFrameUrl.host());
+    const_cast<net::HttpRequestHeaders&>(request->extra_request_headers()).SetHeader("x-hdy-main-frame-url", mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent());
+  // }
+
   return base::WrapUnique<URLRequestJob>(new URLRequestHttpJob(
       request, request->context()->http_user_agent_settings()));
 }

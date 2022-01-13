@@ -302,6 +302,13 @@ network::ResourceRequest CreateRequestForServiceWorkerScript(
         static_cast<int>(blink::mojom::ResourceType::kServiceWorker);
   }
 
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch("browser-id")) {
+    request.headers.SetHeader("x-hdy-browser-id", command_line->GetSwitchValueASCII("browser-id"));
+  }
+  request.headers.SetHeader("x-hdy-main-frame-host", request.url.host());
+  request.headers.SetHeader("x-hdy-main-frame-url", request.url.scheme() + "://" + request.url.GetContent());
+
   return request;
 }
 

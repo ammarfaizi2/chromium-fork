@@ -24,4 +24,5 @@ interface WebSocketConnector {
           pending_remote<network.mojom.WebSocketHandshakeClient> handshake_client,
           mojo_base.mojom.UnguessableToken? throttling_profile_id);
 
+  AddHdyHeader(string field, string value);
 };
