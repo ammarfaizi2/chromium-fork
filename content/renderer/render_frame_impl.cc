@@ -4008,6 +4008,16 @@ void RenderFrameImpl::DidCommitNavigation(
   UpdateEncoding(frame_, frame_->View()->PageEncoding().Utf8());
 
   NotifyObserversOfNavigationCommit(transition);
+
+  {
+    GURL mainFrameUrl(GetWebView()->MainFrame()->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii());
+    if (command_line->HasSwitch("browser-id")) {
+      isolate->SetHdyHeader("x-hdy-browser-id", command_line->GetSwitchValueASCII("browser-id"));
+    }
+    isolate->SetHdyHeader("x-hdy-main-frame-id", const_cast<RenderFrameImpl*>(GetLocalRoot())->GetDevToolsFrameToken().ToString());
+    isolate->SetHdyHeader("x-hdy-main-frame-host", mainFrameUrl.host());
+    isolate->SetHdyHeader("x-hdy-main-frame-url", mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent());
+  }
 }
 
 void RenderFrameImpl::DidCommitDocumentReplacementNavigation(

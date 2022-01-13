@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base/bind.h"
+#include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/memory/ptr_util.h"
 #include "base/numerics/safe_conversions.h"
@@ -109,6 +110,14 @@ ServiceWorkerNewScriptLoader::ServiceWorkerNewScriptLoader(
   // We need to filter on mode, since module imports use kServiceWorker as
   // destination, but only top level module scripts are same-origin.
   if (is_main_script_) {
+
+    const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+    if (command_line->HasSwitch("browser-id")) {
+      resource_request.headers.SetHeader("x-hdy-browser-id", command_line->GetSwitchValueASCII("browser-id"));
+    }
+    resource_request.headers.SetHeaderIfMissing("x-hdy-main-frame-host", original_request.url.host());
+    resource_request.headers.SetHeaderIfMissing("x-hdy-main-frame-url",  original_request.url.scheme() + "://" +  original_request.url.GetContent());
+
     // Request SSLInfo. It will be persisted in service worker storage and
     // may be used by ServiceWorkerMainResourceLoader for navigations handled
     // by this service worker.

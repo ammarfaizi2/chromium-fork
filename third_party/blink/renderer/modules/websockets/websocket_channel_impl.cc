@@ -342,6 +342,16 @@ bool WebSocketChannelImpl::Connect(const KURL& url, const String& protocol) {
   probe::WillCreateWebSocket(execution_context_, identifier_, url, protocol,
                              &devtools_token);
 
+  v8::Isolate* isolate = execution_context_->GetIsolate();
+  connector->AddHdyHeader("x-hdy-browser-id",
+                          isolate->GetHdyHeader("x-hdy-browser-id").c_str());
+  connector->AddHdyHeader("x-hdy-main-frame-id",
+                          isolate->GetHdyHeader("x-hdy-main-frame-id").c_str());
+  connector->AddHdyHeader("x-hdy-main-frame-host",
+                          isolate->GetHdyHeader("x-hdy-main-frame-host").c_str());
+  connector->AddHdyHeader("x-hdy-main-frame-url",
+                          isolate->GetHdyHeader("x-hdy-main-frame-url").c_str());
+
   connector->Connect(
       url, protocols, GetBaseFetchContext()->GetSiteForCookies(),
       execution_context_->UserAgent(),

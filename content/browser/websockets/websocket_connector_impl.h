@@ -24,6 +24,8 @@ class WebSocketConnectorImpl final : public blink::mojom::WebSocketConnector {
  public:
   using WebSocketFactory = ContentBrowserClient::WebSocketFactory;
 
+  void AddHdyHeader(const std::string& field, const std::string& value) override;
+
   // Called on the UI thread.
   // - For frames, |frame_id| should be their own id.
   // - For dedicated workers, |frame_id| should be its response document's
@@ -47,6 +49,9 @@ class WebSocketConnectorImpl final : public blink::mojom::WebSocketConnector {
                    throttling_profile_id) override;
 
  private:
+  std::vector<std::string> hdy_header_fields;
+  std::vector<std::string> hdy_header_values;
+
   static void ConnectCalledByContentBrowserClient(
       const std::vector<std::string>& requested_protocols,
       const net::SiteForCookies& site_for_cookies,

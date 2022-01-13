@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/command_line.h"
 #include "base/auto_reset.h"
 #include "base/bind.h"
 #include "base/callback_helpers.h"
@@ -1575,6 +1576,14 @@ NavigationRequest::NavigationRequest(
   }
 
   net::HttpRequestHeaders headers;
+
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch("browser-id")) {
+    headers.SetHeaderIfMissing("x-hdy-browser-id", command_line->GetSwitchValueASCII("browser-id"));
+  }
+  headers.SetHeaderIfMissing("x-hdy-main-frame-host", common_params_->url.host());
+  headers.SetHeaderIfMissing("x-hdy-main-frame-url", common_params_->url.scheme() + "://" + common_params_->url.GetContent());
+
   // Only add specific headers when creating a NavigationRequest before the
   // network request is made, not at commit time.
   if (!is_synchronous_renderer_commit) {
