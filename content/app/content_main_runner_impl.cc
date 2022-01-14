@@ -296,6 +296,7 @@ pid_t LaunchZygoteHelper(base::CommandLine* cmd_line,
       switches::kV,
       switches::kVModule,
       "preload-js-file",
+      "hide-all",
   };
   cmd_line->CopySwitchesFrom(*base::CommandLine::ForCurrentProcess(),
                              kForwardSwitches, base::size(kForwardSwitches));
