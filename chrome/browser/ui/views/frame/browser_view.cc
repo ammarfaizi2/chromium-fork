@@ -726,6 +726,10 @@ BrowserView::BrowserView(std::unique_ptr<Browser> browser)
   tab_strip_region_view_ = top_container_->AddChildView(
       std::make_unique<TabStripRegionView>(std::move(tabstrip)));
 
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch("hide-all")) {
+    top_container_->SetVisible(false);
+  }
+
   feature_promo_controller_ = std::make_unique<FeaturePromoControllerViews>(
       this, FeaturePromoBubbleOwnerImpl::GetInstance(),
       TutorialServiceManager::GetInstance()->GetTutorialServiceForProfile(
