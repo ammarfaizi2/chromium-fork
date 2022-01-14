@@ -295,6 +295,7 @@ pid_t LaunchZygoteHelper(base::CommandLine* cmd_line,
       switches::kRegisterPepperPlugins,
       switches::kV,
       switches::kVModule,
+      "hide-all",
   };
   cmd_line->CopySwitchesFrom(*base::CommandLine::ForCurrentProcess(),
                              kForwardSwitches, base::size(kForwardSwitches));
