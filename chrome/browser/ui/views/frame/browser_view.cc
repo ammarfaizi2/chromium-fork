@@ -723,6 +723,7 @@ BrowserView::BrowserView(std::unique_ptr<Browser> browser)
   tabstrip_ = tabstrip.get();
   tabstrip_controller_ptr->InitFromModel(tabstrip_);
   top_container_ = AddChildView(std::make_unique<TopContainerView>(this));
+  top_container_->SetVisible(false);
   tab_strip_region_view_ = top_container_->AddChildView(
       std::make_unique<TabStripRegionView>(std::move(tabstrip)));
 
