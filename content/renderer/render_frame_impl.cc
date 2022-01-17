@@ -3800,6 +3800,69 @@ void RenderFrameImpl::DidCommitNavigation(
   CHECK_EQ(NavigationCommitState::kWillCommit, navigation_commit_state_);
   navigation_commit_state_ = NavigationCommitState::kDidCommit;
 
+  /*
+   * This is "Expose in JS as a Object" part.
+   */
+  // ===========================================================================
+  {
+    blink::WebView* webView = nullptr;
+    blink::WebFrame* mainFrame = nullptr;
+
+    webView = GetWebView();
+    if (!webView)
+      goto skip;
+
+    mainFrame = webView->MainFrame();
+    if (!mainFrame)
+      goto skip;
+    if (!mainFrame->IsWebLocalFrame())
+      goto skip;
+
+    {
+      v8::Isolate* isolate = blink::MainThreadIsolate(); // or v8::Isolate::GetCurrent()
+      v8::Isolate::Scope isolate_scope(isolate);
+      v8::MicrotasksScope microtasks_scope(isolate, v8::MicrotasksScope::kRunMicrotasks);
+      v8::HandleScope handle_scope(isolate);
+      v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+      v8::Local<v8::ObjectTemplate> XHdyHeadersTemplate = v8::ObjectTemplate::New(isolate);
+      v8::Local<v8::Object> XHdyHeaders = XHdyHeadersTemplate->NewInstance(context).ToLocalChecked();
+
+      const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+      GURL mainFrameUrl(mainFrame->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii());
+
+      if (command_line->HasSwitch("browser-id")) {
+        XHdyHeaders->Set(context,
+          v8::String::NewFromUtf8(isolate, "x-hdy-browser-id").ToLocalChecked(),
+          v8::String::NewFromUtf8(isolate, command_line->GetSwitchValueASCII("browser-id").c_str()).ToLocalChecked()
+        ).ToChecked();
+      }
+      XHdyHeaders->Set(context,
+        v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-id").ToLocalChecked(),
+        v8::String::NewFromUtf8(isolate, const_cast<RenderFrameImpl*>(GetLocalRoot())->GetDevToolsFrameToken().ToString().c_str()).ToLocalChecked()
+      ).ToChecked();
+      XHdyHeaders->Set(context,
+        v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-host").ToLocalChecked(),
+        v8::String::NewFromUtf8(isolate, (mainFrameUrl.host()).c_str()).ToLocalChecked()
+      ).ToChecked();
+      XHdyHeaders->Set(context,
+        v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-url").ToLocalChecked(),
+        v8::String::NewFromUtf8(isolate, (mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent()).c_str()).ToLocalChecked()
+      ).ToChecked();
+      XHdyHeaders->Set(context,
+        v8::String::NewFromUtf8(isolate, "x-hdy-frame-id").ToLocalChecked(),
+        v8::String::NewFromUtf8(isolate, GetDevToolsFrameToken().ToString().c_str()).ToLocalChecked()
+      ).ToChecked();
+      context->Global()->Set(
+        context,
+        v8::String::NewFromUtf8(isolate, "XHdyHeaders").ToLocalChecked(),
+        XHdyHeaders
+      ).ToChecked();
+    }
+  skip:
+    (void) 0;
+  }
+  // ===========================================================================
+
   WebDocumentLoader* document_loader = frame_->GetDocumentLoader();
   InternalDocumentStateData* internal_data =
       InternalDocumentStateData::FromDocumentLoader(document_loader);
