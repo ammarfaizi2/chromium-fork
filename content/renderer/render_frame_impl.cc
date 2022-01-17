@@ -1381,6 +1381,39 @@ class RenderFrameImpl::FrameURLLoaderFactory
     // This should not be called if the frame is detached.
     DCHECK(frame_);
 
+    {
+      auto &request2 = const_cast<blink::WebURLRequest&>(request);
+      blink::WebView* webView = nullptr;
+      blink::WebFrame* mainFrame = nullptr;
+
+      webView = frame_->GetWebView();
+      if (!webView)
+        goto skip;
+
+      mainFrame = webView->MainFrame();
+      if (!mainFrame)
+        goto skip;
+      if (!mainFrame->IsWebLocalFrame())
+        goto skip;
+
+      {
+        const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+        std::string url = mainFrame->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii();
+        LOG(INFO) << "url: " << url;
+        GURL mainFrameUrl(url);
+        if (command_line->HasSwitch("browser-id")) {
+          request2.SetHttpHeaderField("x-hdy-browser-id", blink::WebString::FromASCII(command_line->GetSwitchValueASCII("browser-id")));
+        }
+        request2.SetHttpHeaderField("x-hdy-main-frame-host", blink::WebString::FromASCII(mainFrameUrl.host()));
+        request2.SetHttpHeaderField("x-hdy-main-frame-url", blink::WebString::FromASCII(mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent()));
+        request2.SetHttpHeaderField("x-hdy-main-frame-id",  blink::WebString::FromASCII(const_cast<RenderFrameImpl*>(frame_->GetLocalRoot())->GetDevToolsFrameToken().ToString()));
+        request2.SetHttpHeaderField("x-hdy-frame-id", blink::WebString::FromASCII(frame_->GetDevToolsFrameToken().ToString()));
+      }
+
+    skip:
+      (void) 0;
+    }
+
     std::vector<std::string> cors_exempt_header_list =
         RenderThreadImpl::current()->cors_exempt_header_list();
     blink::WebVector<blink::WebString> web_cors_exempt_header_list(
@@ -4358,10 +4391,39 @@ void RenderFrameImpl::OnLargeStickyAdDetected() {
 
 void RenderFrameImpl::WillSendRequest(blink::WebURLRequest& request,
                                       ForRedirect for_redirect) {
+  blink::WebView* webView = nullptr;
+  blink::WebFrame* mainFrame = nullptr;
+
   // This method is called for subresources, while transition type is
   // a navigation concept. We pass ui::PAGE_TRANSITION_LINK as default one.
   WillSendRequestInternal(request, /*for_main_frame=*/false,
                           ui::PAGE_TRANSITION_LINK, for_redirect);
+
+  webView = GetWebView();
+  if (!webView)
+    goto skip;
+
+  mainFrame = webView->MainFrame();
+  if (!mainFrame)
+    goto skip;
+  if (!mainFrame->IsWebLocalFrame())
+    goto skip;
+
+  {
+    const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+    std::string url = mainFrame->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii();
+    GURL mainFrameUrl(url);
+    if (command_line->HasSwitch("browser-id")) {
+      request.SetHttpHeaderField("x-hdy-browser-id", blink::WebString::FromASCII(command_line->GetSwitchValueASCII("browser-id")));
+    }
+    request.SetHttpHeaderField("x-hdy-main-frame-host", blink::WebString::FromASCII(mainFrameUrl.host()));
+    request.SetHttpHeaderField("x-hdy-main-frame-url", blink::WebString::FromASCII(mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent()));
+    request.SetHttpHeaderField("x-hdy-main-frame-id",  blink::WebString::FromASCII(const_cast<RenderFrameImpl*>(GetLocalRoot())->GetDevToolsFrameToken().ToString()));
+    request.SetHttpHeaderField("x-hdy-frame-id", blink::WebString::FromASCII(GetDevToolsFrameToken().ToString()));
+  }
+
+skip:
+  (void) 0;
 #if !defined(OS_ANDROID)
   for (auto& observer : observers_) {
     observer.WillSendRequest(request);
@@ -5813,6 +5875,40 @@ void RenderFrameImpl::BeginNavigationInternal(
   browser_side_navigation_pending_ = true;
 
   blink::WebURLRequest& request = info->url_request;
+
+  // ===========================================================================
+  {
+    blink::WebView* webView = nullptr;
+    blink::WebFrame* mainFrame = nullptr;
+
+    webView = GetWebView();
+    if (!webView)
+      goto skip;
+
+    mainFrame = webView->MainFrame();
+    if (!mainFrame)
+      goto skip;
+    if (!mainFrame->IsWebLocalFrame())
+      goto skip;
+
+    {
+      const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+      std::string url = mainFrame->ToWebLocalFrame()->GetDocumentLoader()->GetUrl().GetString().Ascii();
+      LOG(INFO) << "url: " << url;
+      GURL mainFrameUrl(url);
+      if (command_line->HasSwitch("browser-id")) {
+        request.SetHttpHeaderField("x-hdy-browser-id", blink::WebString::FromASCII(command_line->GetSwitchValueASCII("browser-id")));
+      }
+      request.SetHttpHeaderField("x-hdy-main-frame-host", blink::WebString::FromASCII(mainFrameUrl.host()));
+      request.SetHttpHeaderField("x-hdy-main-frame-url", blink::WebString::FromASCII(mainFrameUrl.scheme() + "://" + mainFrameUrl.GetContent()));
+      request.SetHttpHeaderField("x-hdy-main-frame-id",  blink::WebString::FromASCII(const_cast<RenderFrameImpl*>(GetLocalRoot())->GetDevToolsFrameToken().ToString()));
+      request.SetHttpHeaderField("x-hdy-frame-id", blink::WebString::FromASCII(GetDevToolsFrameToken().ToString()));
+    }
+
+  skip:
+    (void) 0;
+  }
+  // ===========================================================================
 
   // Set SiteForCookies.
   WebDocument frame_document = frame_->GetDocument();
