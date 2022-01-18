@@ -151,9 +151,9 @@ class WebURLResponse {
   BLINK_PLATFORM_EXPORT void SetAsyncRevalidationRequested(bool);
   BLINK_PLATFORM_EXPORT void SetNetworkAccessed(bool);
 
-#if INSIDE_BLINK
+// #if INSIDE_BLINK
   BLINK_PLATFORM_EXPORT const ResourceResponse& ToResourceResponse() const;
-#endif
+// #endif
 
   // Flag whether this request was served from the disk cache entry.
   BLINK_PLATFORM_EXPORT void SetWasCached(bool);

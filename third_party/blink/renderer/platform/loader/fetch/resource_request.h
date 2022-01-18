@@ -30,6 +30,12 @@
 
 #include <memory>
 
+#include <string>
+#include <vector>
+#include "third_party/blink/public/web/web_navigation_control.h"
+#include "third_party/blink/public/web/web_v8_features.h"
+#include "third_party/blink/renderer/platform/bindings/script_forbidden_scope.h"
+
 #include "base/containers/flat_set.h"
 #include "base/time/time.h"
 #include "base/unguessable_token.h"
@@ -111,6 +117,9 @@ class PLATFORM_EXPORT ResourceRequestHead {
   ResourceRequestHead& operator=(ResourceRequestHead&&);
 
   ~ResourceRequestHead();
+
+  void AttachWebLocalFrame(blink::WebNavigationControl* frame);
+  void StoreHeaderInWebLocalFrame(std::string name, std::string value);
 
   // Constructs a new ResourceRequest for a redirect from this instance.
   // Since body for a redirect request is kept and handled in the network
@@ -666,6 +675,10 @@ class PLATFORM_EXPORT ResourceRequestHead {
   scoped_refptr<
       base::RefCountedData<base::flat_set<net::SourceStream::SourceType>>>
       devtools_accepted_stream_types_;
+
+  blink::WebNavigationControl* frame_ = nullptr;
+  std::vector<std::string> queued_header_fields;
+  std::vector<std::string> queued_header_values;
 };
 
 class PLATFORM_EXPORT ResourceRequestBody {

@@ -233,6 +233,10 @@
 #include "v8/include/v8-local-handle.h"
 #include "v8/include/v8-microtask-queue.h"
 
+#include "third_party/blink/renderer/platform/network/http_header_map.h"
+#include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
+#include "third_party/blink/renderer/platform/loader/fetch/resource_response.h"
+
 #if BUILDFLAG(ENABLE_PLUGINS)
 #include "content/renderer/pepper/pepper_browser_connection.h"
 #include "content/renderer/pepper/pepper_plugin_instance_impl.h"
@@ -1385,6 +1389,8 @@ class RenderFrameImpl::FrameURLLoaderFactory
       auto &request2 = const_cast<blink::WebURLRequest&>(request);
       blink::WebView* webView = nullptr;
       blink::WebFrame* mainFrame = nullptr;
+
+      request2.ToMutableResourceRequest().AttachWebLocalFrame(frame_->frame_);
 
       webView = frame_->GetWebView();
       if (!webView)
@@ -3857,6 +3863,42 @@ void RenderFrameImpl::DidCommitNavigation(
       v8::MicrotasksScope microtasks_scope(isolate, v8::MicrotasksScope::kRunMicrotasks);
       v8::HandleScope handle_scope(isolate);
       v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+
+      // ======================================================================
+      // Task 31
+      v8::Local<v8::ObjectTemplate> ObjectTemplate = v8::ObjectTemplate::New(isolate);
+      v8::Local<v8::Value> RequestHeaders = context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "RequestHeaders").ToLocalChecked()).ToLocalChecked();
+      v8::Local<v8::Value> ResponseHeaders = context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "ResponseHeaders").ToLocalChecked()).ToLocalChecked();
+      v8::Local<v8::Value> RequestId = context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "RequestId").ToLocalChecked()).ToLocalChecked();
+
+      if (!RequestHeaders->IsObject()) {
+        RequestHeaders = ObjectTemplate->NewInstance(context).ToLocalChecked();
+        context->Global()->Set(
+          context,
+          v8::String::NewFromUtf8(isolate, "RequestHeaders").ToLocalChecked(),
+          RequestHeaders
+        ).ToChecked();
+      }
+
+      if (!ResponseHeaders->IsObject()) {
+        ResponseHeaders = ObjectTemplate->NewInstance(context).ToLocalChecked();
+        context->Global()->Set(
+          context,
+          v8::String::NewFromUtf8(isolate, "ResponseHeaders").ToLocalChecked(),
+          ResponseHeaders
+        ).ToChecked();
+      }
+
+      if (!RequestId->IsNumber()) {
+        context->Global()->Set(
+          context,
+          v8::String::NewFromUtf8(isolate, "RequestId").ToLocalChecked(),
+          v8::Number::New(isolate, -1)
+        ).ToChecked();
+      }
+      // ======================================================================
+
+
       v8::Local<v8::ObjectTemplate> XHdyHeadersTemplate = v8::ObjectTemplate::New(isolate);
       v8::Local<v8::Object> XHdyHeaders = XHdyHeadersTemplate->NewInstance(context).ToLocalChecked();
 
@@ -4530,6 +4572,24 @@ void RenderFrameImpl::DidStartResponse(
     observer.DidStartResponse(response_url, request_id, *response_head,
                               request_destination, previews_state);
   }
+
+  // ===========================================================================
+  {
+    v8::Isolate* isolate = blink::MainThreadIsolate(); // or v8::Isolate::GetCurrent()
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::MicrotasksScope microtasks_scope(isolate, v8::MicrotasksScope::kRunMicrotasks);
+    v8::HandleScope handle_scope(isolate);
+    v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+    v8::Local<v8::Value> RequestId = context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "RequestId").ToLocalChecked()).ToLocalChecked();
+    if (!RequestId->IsNumber() || RequestId->ToNumber(context).ToLocalChecked()->Value() < 0) {
+      context->Global()->Set(
+        context,
+        v8::String::NewFromUtf8(isolate, "RequestId").ToLocalChecked(),
+        v8::Number::New(isolate, request_id)
+      ).ToChecked();
+    }
+  }
+  // ===========================================================================
 }
 
 void RenderFrameImpl::DidCompleteResponse(
@@ -4814,6 +4874,30 @@ RenderFrameImpl::MakeDidCommitProvisionalLoadParams(
     const absl::optional<base::UnguessableToken>& embedding_token) {
   WebDocumentLoader* document_loader = frame_->GetDocumentLoader();
   const WebURLResponse& response = document_loader->GetResponse();
+
+  // ===========================================================================
+  {
+    v8::Isolate* isolate = blink::MainThreadIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::MicrotasksScope microtasks_scope(isolate, v8::MicrotasksScope::kRunMicrotasks);
+    v8::HandleScope handle_scope(isolate);
+    v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+    v8::Local<v8::Value> ResponseHeaders = context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "ResponseHeaders").ToLocalChecked()).ToLocalChecked();
+    if (ResponseHeaders->IsObject()) {
+      const blink::ResourceResponse& rresponse = response.ToResourceResponse();
+      const blink::HTTPHeaderMap& headermap = rresponse.HttpHeaderFields();
+      if (!blink::ScriptForbiddenScope::IsScriptForbidden()) {
+        for (blink::HTTPHeaderMap::const_iterator it = headermap.begin(); it != headermap.end(); ++it) {
+          ResponseHeaders->ToObject(context).ToLocalChecked()->Set(
+            context,
+            v8::String::NewFromUtf8(isolate, it->key.Ascii().c_str()).ToLocalChecked(),
+            v8::String::NewFromUtf8(isolate, it->value.Ascii().c_str()).ToLocalChecked()
+          ).ToChecked();
+        }
+      }
+    }
+  }
+  // ===========================================================================
 
   InternalDocumentStateData* internal_data =
       InternalDocumentStateData::FromDocumentLoader(

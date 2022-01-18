@@ -39,6 +39,11 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/weborigin/referrer.h"
 
+#include "third_party/blink/public/web/blink.h"
+#include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/public/web/web_view.h"
+#include "v8/include/v8.h"
+
 namespace blink {
 
 ResourceRequestHead::WebBundleTokenParams&
@@ -48,6 +53,41 @@ ResourceRequestHead::WebBundleTokenParams::operator=(
   token = other.token;
   handle = other.CloneHandle();
   return *this;
+}
+
+void ResourceRequestHead::AttachWebLocalFrame(blink::WebNavigationControl* frame) {
+  frame_ = frame;
+  while(!queued_header_fields.empty()) {
+    StoreHeaderInWebLocalFrame(queued_header_fields.back(), queued_header_values.back());
+    queued_header_fields.pop_back();
+    queued_header_values.pop_back();
+  }
+}
+
+void ResourceRequestHead::StoreHeaderInWebLocalFrame(std::string name, std::string value) {
+  if (!frame_) {
+    queued_header_fields.push_back(name);
+    queued_header_values.push_back(value);
+    return;
+  }
+  v8::Isolate* isolate = blink::MainThreadIsolate();
+  v8::Isolate::Scope isolate_scope(isolate);
+  v8::MicrotasksScope microtasks_scope(isolate, v8::MicrotasksScope::kRunMicrotasks);
+  v8::HandleScope handle_scope(isolate);
+  v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+  v8::Local<v8::Value> RequestHeaders = context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "RequestHeaders").ToLocalChecked()).ToLocalChecked();
+  if (RequestHeaders->IsObject()) {
+    const blink::HTTPHeaderMap& headermap = HttpHeaderFields();
+    if (!blink::ScriptForbiddenScope::IsScriptForbidden()) {
+      for (blink::HTTPHeaderMap::const_iterator it = headermap.begin(); it != headermap.end(); ++it) {
+        RequestHeaders->ToObject(context).ToLocalChecked()->Set(
+          context,
+          v8::String::NewFromUtf8(isolate, it->key.Ascii().c_str()).ToLocalChecked(),
+          v8::String::NewFromUtf8(isolate, it->value.Ascii().c_str()).ToLocalChecked()
+        ).ToChecked();
+      }
+    }
+  }
 }
 
 ResourceRequestHead::WebBundleTokenParams::WebBundleTokenParams(
@@ -299,6 +339,7 @@ const AtomicString& ResourceRequestHead::HttpHeaderField(
 void ResourceRequestHead::SetHttpHeaderField(const AtomicString& name,
                                              const AtomicString& value) {
   http_header_fields_.Set(name, value);
+  StoreHeaderInWebLocalFrame(name.Ascii(), value.Ascii());
 }
 
 void ResourceRequestHead::SetHTTPOrigin(const SecurityOrigin* origin) {
@@ -374,6 +415,7 @@ void ResourceRequestHead::AddHttpHeaderField(const AtomicString& name,
   HTTPHeaderMap::AddResult result = http_header_fields_.Add(name, value);
   if (!result.is_new_entry)
     result.stored_value->value = result.stored_value->value + ", " + value;
+  StoreHeaderInWebLocalFrame(name.Ascii(), value.Ascii());
 }
 
 void ResourceRequestHead::AddHTTPHeaderFields(

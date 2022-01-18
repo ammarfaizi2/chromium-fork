@@ -321,9 +321,10 @@ class WebURLRequest {
   BLINK_PLATFORM_EXPORT absl::optional<base::UnguessableToken> WebBundleToken()
       const;
 
-#if INSIDE_BLINK
   BLINK_PLATFORM_EXPORT ResourceRequest& ToMutableResourceRequest();
   BLINK_PLATFORM_EXPORT const ResourceRequest& ToResourceRequest() const;
+
+#if INSIDE_BLINK
 
  protected:
   // Permit subclasses to set arbitrary ResourceRequest pointer as
