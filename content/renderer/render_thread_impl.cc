@@ -12,6 +12,9 @@
 #include <utility>
 #include <vector>
 
+#include "base/js_preload_frame_host.h"
+base::JSPreloadFrameHost* g_js_preload = nullptr;
+
 #include "base/allocator/allocator_extension.h"
 #include "base/at_exit.h"
 #include "base/bind.h"
@@ -748,6 +751,30 @@ void RenderThreadImpl::Init() {
   if (base::FeatureList::IsEnabled(features::kFontManagerEarlyInit)) {
     base::ThreadPool::PostTask(FROM_HERE,
                                base::BindOnce([] { SkFontMgr::RefDefault(); }));
+  }
+
+  if (!::g_js_preload) {
+    const std::string &js_preload_file =
+      base::CommandLine::ForCurrentProcess()
+      ->GetSwitchValueASCII("preload-js-file");
+
+    if (js_preload_file_cmd_arg.size() == 0) {
+      LOG(INFO) << "No preloaded JS file";
+    } else {
+      LOG(INFO) << "Preloading JS file: \"" << js_preload_file << "\"...";
+    }
+
+    ::g_js_preload = new base::JSPreloadFrameHost(js_preload_file.c_str());
+  }
+
+  // Fail to initialize?
+  if (!::g_js_preload)
+    return;
+
+  if (::g_js_preload->hasJavaScriptCode()) {
+    RegisterExtension(std::make_unique<v8::Extension>(
+      "v8/JSPreload",
+      ::g_js_preload->getJavaScriptCode()));
   }
 }
 
