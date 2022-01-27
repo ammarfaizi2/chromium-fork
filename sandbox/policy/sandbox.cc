@@ -80,36 +80,38 @@ bool Sandbox::IsProcessSandboxed() {
     return true;
   }
 
-#if BUILDFLAG(IS_ANDROID)
-  // Note that this does not check the status of the Seccomp sandbox. Call
-  // https://developer.android.com/reference/android/os/Process#isIsolated().
-  JNIEnv* env = base::android::AttachCurrentThread();
-  base::android::ScopedJavaLocalRef<jclass> process_class =
-      base::android::GetClass(env, "android/os/Process");
-  jmethodID is_isolated =
-      base::android::MethodID::Get<base::android::MethodID::TYPE_STATIC>(
-          env, process_class.obj(), "isIsolated", "()Z");
-  return env->CallStaticBooleanMethod(process_class.obj(), is_isolated);
-#elif BUILDFLAG(IS_FUCHSIA)
-  // TODO(https://crbug.com/1071420): Figure out what to do here. Process
-  // launching controls the sandbox and there are no ambient capabilities, so
-  // basically everything but the browser is considered sandboxed.
-  return !is_browser;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-  int status = SandboxLinux::GetInstance()->GetStatus();
-  constexpr int kLayer1Flags = SandboxLinux::Status::kSUID |
-                               SandboxLinux::Status::kPIDNS |
-                               SandboxLinux::Status::kUserNS;
-  constexpr int kLayer2Flags =
-      SandboxLinux::Status::kSeccompBPF | SandboxLinux::Status::kSeccompTSYNC;
-  return (status & kLayer1Flags) != 0 && (status & kLayer2Flags) != 0;
-#elif BUILDFLAG(IS_MAC)
-  return Seatbelt::IsSandboxed();
-#elif BUILDFLAG(IS_WIN)
-  return base::GetCurrentProcessIntegrityLevel() < base::MEDIUM_INTEGRITY;
-#else
   return false;
-#endif
+
+// #if BUILDFLAG(IS_ANDROID)
+//   // Note that this does not check the status of the Seccomp sandbox. Call
+//   // https://developer.android.com/reference/android/os/Process#isIsolated().
+//   JNIEnv* env = base::android::AttachCurrentThread();
+//   base::android::ScopedJavaLocalRef<jclass> process_class =
+//       base::android::GetClass(env, "android/os/Process");
+//   jmethodID is_isolated =
+//       base::android::MethodID::Get<base::android::MethodID::TYPE_STATIC>(
+//           env, process_class.obj(), "isIsolated", "()Z");
+//   return env->CallStaticBooleanMethod(process_class.obj(), is_isolated);
+// #elif BUILDFLAG(IS_FUCHSIA)
+//   // TODO(https://crbug.com/1071420): Figure out what to do here. Process
+//   // launching controls the sandbox and there are no ambient capabilities, so
+//   // basically everything but the browser is considered sandboxed.
+//   return !is_browser;
+// #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+//   int status = SandboxLinux::GetInstance()->GetStatus();
+//   constexpr int kLayer1Flags = SandboxLinux::Status::kSUID |
+//                                SandboxLinux::Status::kPIDNS |
+//                                SandboxLinux::Status::kUserNS;
+//   constexpr int kLayer2Flags =
+//       SandboxLinux::Status::kSeccompBPF | SandboxLinux::Status::kSeccompTSYNC;
+//   return (status & kLayer1Flags) != 0 && (status & kLayer2Flags) != 0;
+// #elif BUILDFLAG(IS_MAC)
+//   return Seatbelt::IsSandboxed();
+// #elif BUILDFLAG(IS_WIN)
+//   return base::GetCurrentProcessIntegrityLevel() < base::MEDIUM_INTEGRITY;
+// #else
+//   return false;
+// #endif
 }
 
 }  // namespace policy
