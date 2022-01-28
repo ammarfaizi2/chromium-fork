@@ -412,6 +412,34 @@ void ToolbarView::Init() {
       button->set_tag(GetViewCommandMap().at(button->GetID()));
   }
 
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch("hide-all")) {
+
+    #define REMOVE_FROM_TOP_CONTAINER(EL)   \
+    if (EL) {                               \
+      EL->SetVisible(false);                \
+    }
+
+    REMOVE_FROM_TOP_CONTAINER(left_side_panel_button_);
+    REMOVE_FROM_TOP_CONTAINER(back_);
+    REMOVE_FROM_TOP_CONTAINER(forward_);
+    REMOVE_FROM_TOP_CONTAINER(reload_);
+    REMOVE_FROM_TOP_CONTAINER(home_);
+    REMOVE_FROM_TOP_CONTAINER(custom_tab_bar_);
+    REMOVE_FROM_TOP_CONTAINER(location_bar_);
+    REMOVE_FROM_TOP_CONTAINER(extensions_container_);
+    REMOVE_FROM_TOP_CONTAINER(chrome_labs_button_);
+    REMOVE_FROM_TOP_CONTAINER(cast_);
+    REMOVE_FROM_TOP_CONTAINER(side_panel_button_);
+    REMOVE_FROM_TOP_CONTAINER(toolbar_account_icon_container_);
+    REMOVE_FROM_TOP_CONTAINER(avatar_);
+    REMOVE_FROM_TOP_CONTAINER(media_button_);
+    REMOVE_FROM_TOP_CONTAINER(send_tab_to_self_button_);
+    REMOVE_FROM_TOP_CONTAINER(app_menu_button_);
+    this->SetVisible(false);
+
+    #undef REMOVE_FROM_TOP_CONTAINER
+  }
+
   initialized_ = true;
 }
 
