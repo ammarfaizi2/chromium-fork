@@ -145,6 +145,9 @@ OpaqueBrowserFrameView::~OpaqueBrowserFrameView() {}
 void OpaqueBrowserFrameView::InitViews() {
   web_app::AppBrowserController* controller =
       browser_view()->browser()->app_controller();
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  const bool hide_all = command_line.HasSwitch("hide-all");      
 
   if (controller && controller->IsWindowControlsOverlayEnabled()) {
     caption_button_placeholder_container_ =
@@ -218,7 +221,11 @@ void OpaqueBrowserFrameView::InitViews() {
   // which surrounds the title with minimal-ui buttons on the left,
   // and other controls (such as the app menu button) on the right.
   window_title_ = new views::Label(browser_view()->GetWindowTitle());
-  window_title_->SetVisible(browser_view()->ShouldShowWindowTitle());
+  if (hide_all) {
+    window_title_->SetVisible(false);
+  } else {
+    window_title_->SetVisible(browser_view()->ShouldShowWindowTitle());
+  }
   window_title_->SetSubpixelRenderingEnabled(false);
   window_title_->SetHorizontalAlignment(gfx::ALIGN_LEFT);
   window_title_->SetID(VIEW_ID_WINDOW_TITLE);
