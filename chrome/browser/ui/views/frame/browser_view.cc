@@ -691,6 +691,10 @@ BrowserView::BrowserView(std::unique_ptr<Browser> browser)
           std::make_unique<AccessibilityModeObserver>(this)) {
   SetShowIcon(::ShouldShowWindowIcon(browser_.get()));
 
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  const bool hide_all = command_line.HasSwitch("hide-all");
+
   // In forced app mode, all size controls are always disabled. Otherwise, use
   // `create_params` to enable/disable specific size controls.
   if (chrome::IsRunningInForcedAppMode()) {
@@ -798,6 +802,12 @@ BrowserView::BrowserView(std::unique_ptr<Browser> browser)
   // needs to come after toolbar in focus order (see EnsureFocusOrder()).
   infobar_container_ =
       AddChildView(std::make_unique<InfoBarContainerView>(this));
+
+  if (hide_all) {
+    tab_strip_region_view_->SetVisible(false);
+    infobar_container_->SetVisible(false);
+    top_container_->SetVisible(false);
+  }
 
   InitStatusBubble();
 
