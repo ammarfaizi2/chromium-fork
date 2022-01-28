@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "base/command_line.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
@@ -764,6 +765,14 @@ void OpaqueBrowserFrameView::WindowIconPressed() {
 }
 
 bool OpaqueBrowserFrameView::GetShowWindowTitleBar() const {
+  
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+
+  // task_am_002: opaque_browser_frame_view: Hide the title bar
+  if (command_line.HasSwitch("hide-all"))
+    return false;
+
   // Do not show the custom title bar if the system title bar option is enabled.
   if (!frame()->UseCustomFrame())
     return false;
