@@ -1224,8 +1224,13 @@ void BrowserView::UpdateFrameColor() {
 void BrowserView::BookmarkBarStateChanged(
     BookmarkBar::AnimateChangeType change_type) {
   if (bookmark_bar_view_.get()) {
+    const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+    const bool hide_all = command_line.HasSwitch("hide-all");
     BookmarkBar::State new_state = browser_->bookmark_bar_state();
     bookmark_bar_view_->SetBookmarkBarState(new_state, change_type);
+    if (hide_all)
+      bookmark_bar_view_->SetVisible(false);
   }
 
   if (MaybeShowBookmarkBar(GetActiveWebContents()))
