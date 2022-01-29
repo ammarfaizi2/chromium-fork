@@ -3887,12 +3887,68 @@ void RenderFrameImpl::DidCommitNavigation(
 
   std::string* url = nullptr;
 
-  if (is_hdy_headers_on()) {
+  if (is_hdy_headers_on())
     url = get_url_with_frame(this);
-  }
 
-  if (url)
+  if (url) {
+    v8::Isolate* isolate = blink::MainThreadIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::MicrotasksScope microtasks_scope(isolate,
+                                         v8::MicrotasksScope::kRunMicrotasks);
+    v8::HandleScope handle_scope(isolate);
+    v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+    v8::Local<v8::ObjectTemplate> XHdyHeadersTemplate =
+      v8::ObjectTemplate::New(isolate);
+    v8::Local<v8::Object> XHdyHeaders =
+      XHdyHeadersTemplate->NewInstance(context).ToLocalChecked();
+
+    const char* browser_id = get_browser_id();
+    if (browser_id) {
+      auto p1 = v8::String::NewFromUtf8(isolate, "x-hdy-browser-id")
+                  .ToLocalChecked();
+      auto p2 = v8::String::NewFromUtf8(isolate, browser_id).ToLocalChecked();
+      XHdyHeaders->Set(context, p1, p2).ToChecked();
+    }
+
+    RenderFrameImpl* local_root = const_cast<RenderFrameImpl*>(GetLocalRoot());
+    std::string main_frame_id = local_root->GetDevToolsFrameToken().ToString();
+    XHdyHeaders->Set(
+      context,
+      v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-id").ToLocalChecked(),
+      v8::String::NewFromUtf8(isolate, main_frame_id.c_str()).ToLocalChecked()
+    ).ToChecked();
+
+    std::string frame_id = GetDevToolsFrameToken().ToString();
+    XHdyHeaders->Set(
+      context,
+      v8::String::NewFromUtf8(isolate, "x-hdy-frame-id").ToLocalChecked(),
+      v8::String::NewFromUtf8(isolate, frame_id.c_str()).ToLocalChecked()
+    ).ToChecked();
+
+    GURL main_frame_url(*url);
+
+    std::string main_frame_host = main_frame_url.host();
+    XHdyHeaders->Set(
+      context,
+      v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-host").ToLocalChecked(),
+      v8::String::NewFromUtf8(isolate, main_frame_host.c_str()).ToLocalChecked()
+    ).ToChecked();
+
+    std::string frame_url = main_frame_url.scheme() + "://"
+                            + main_frame_url.GetContent();
+    XHdyHeaders->Set(
+      context,
+      v8::String::NewFromUtf8(isolate, "x-hdy-main-frame-url").ToLocalChecked(),
+      v8::String::NewFromUtf8(isolate, frame_url.c_str()).ToLocalChecked()
+    ).ToChecked();
+
+    context->Global()->Set(
+      context,
+      v8::String::NewFromUtf8(isolate, "XHdyHeaders").ToLocalChecked(),
+      XHdyHeaders
+    ).ToChecked();
     delete url;
+  }
 
   mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker>
       browser_interface_broker_receiver;
