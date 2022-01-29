@@ -264,6 +264,30 @@
 #define MAYBEVLOG DVLOG
 #endif
 
+bool is_hdy_headers_on(void);
+
+bool is_hdy_headers_on(void)
+{
+  static bool is_on;
+  static bool checked = false;
+  static std::mutex mut;
+  const base::CommandLine* command_line;
+
+  if (checked)
+    return is_on;
+
+  mut.lock();
+  if (checked) {
+    mut.unlock();
+    return is_on;
+  }
+  checked = true;
+  command_line = base::CommandLine::ForCurrentProcess();
+  is_on = command_line->HasSwitch("x-hdy-headers");
+  mut.unlock();
+  return is_on;
+}
+
 const char* get_browser_id(void);
 
 const char* get_browser_id(void)
@@ -3305,6 +3329,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
   static const char* const kSwitchNames[] = {
     "hide-all",
     "browser-id",
+    "x-hdy-headers",
     "preload-js-file",
     switches::kDisableInProcessStackTraces,
     sandbox::policy::switches::kDisableSeccompFilterSandbox,
