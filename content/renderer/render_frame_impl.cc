@@ -5908,6 +5908,49 @@ void RenderFrameImpl::BeginNavigationInternal(
   browser_side_navigation_pending_ = true;
 
   blink::WebURLRequest& request = info->url_request;
+  std::string* url = nullptr;
+  if (is_hdy_headers_on()) {
+    url = get_url_with_frame(this);
+  }
+  if (url) {
+    const char* browser_id = get_browser_id();
+    std::string browser_id_tmp;
+
+    if (browser_id) {
+      browser_id_tmp = std::string(browser_id);
+      request.SetHttpHeaderField(
+        "x-hdy-browser-id",
+        blink::WebString::FromASCII(browser_id_tmp)
+      );
+    }
+
+    GURL mainFrameUrl(*url);
+    request.SetHttpHeaderField(
+      "x-hdy-main-frame-host",
+      blink::WebString::FromASCII(mainFrameUrl.host())
+    );
+
+    std::string main_frame_url = mainFrameUrl.scheme() + "://"
+                                  + mainFrameUrl.GetContent();
+    request.SetHttpHeaderField(
+      "x-hdy-main-frame-url",
+      blink::WebString::FromASCII(main_frame_url)
+    );
+
+    RenderFrameImpl* local_root = const_cast<RenderFrameImpl*>(GetLocalRoot());
+    std::string main_frame_id = local_root->GetDevToolsFrameToken().ToString();
+    request.SetHttpHeaderField(
+      "x-hdy-main-frame-id",
+      blink::WebString::FromASCII(main_frame_id)
+    );
+
+    std::string frame_id = GetDevToolsFrameToken().ToString();
+    request.SetHttpHeaderField(
+      "x-hdy-frame-id",
+      blink::WebString::FromASCII(frame_id)
+    );
+    delete url;
+  }
 
   // Set SiteForCookies.
   WebDocument frame_document = frame_->GetDocument();
