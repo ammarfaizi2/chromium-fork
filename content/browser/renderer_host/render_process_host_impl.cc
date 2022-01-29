@@ -264,6 +264,33 @@
 #define MAYBEVLOG DVLOG
 #endif
 
+const char* get_browser_id(void);
+
+const char* get_browser_id(void)
+{
+  static char browser_id[255];
+  static bool checked = false;
+  static std::mutex mut;
+  const base::CommandLine* command_line = nullptr;
+
+  if (checked)
+    return browser_id;
+
+  mut.lock();
+  if (checked) {
+    mut.unlock();
+    return browser_id;
+  }
+  checked = true;
+  command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch("browser-id")) {
+    std::string tmp = command_line->GetSwitchValueASCII("browser-id");
+    strncpy(browser_id, tmp.c_str(), sizeof(browser_id) - 1);
+  }
+  mut.unlock();
+  return browser_id;
+}
+
 namespace content {
 
 namespace {
@@ -3277,6 +3304,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
   // with any associated values) if present in the browser command line.
   static const char* const kSwitchNames[] = {
     "hide-all",
+    "browser-id",
     "preload-js-file",
     switches::kDisableInProcessStackTraces,
     sandbox::policy::switches::kDisableSeccompFilterSandbox,
