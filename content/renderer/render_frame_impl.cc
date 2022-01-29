@@ -4410,6 +4410,53 @@ void RenderFrameImpl::WillSendRequest(blink::WebURLRequest& request,
   // a navigation concept. We pass ui::PAGE_TRANSITION_LINK as default one.
   WillSendRequestInternal(request, /*for_main_frame=*/false,
                           ui::PAGE_TRANSITION_LINK, for_redirect);
+
+  std::string* url = nullptr;
+  if (is_hdy_headers_on()) {
+    url = get_url_with_frame(this);
+  }
+
+  if (url) {
+    const char* browser_id = get_browser_id();
+    GURL mainFrameUrl(*url);
+
+    if (browser_id) {
+      std::string tmp(browser_id);
+      request.SetHttpHeaderField(
+        "x-hdy-browser-id",
+        blink::WebString::FromASCII(tmp)
+      );
+    }
+
+    std::string host = mainFrameUrl.host();
+    request.SetHttpHeaderField(
+      "x-hdy-main-frame-host",
+      blink::WebString::FromASCII(host)
+    );
+
+    std::string main_frame_url = mainFrameUrl.scheme() + "://"
+                                 + mainFrameUrl.GetContent();
+    request.SetHttpHeaderField(
+      "x-hdy-main-frame-url",
+      blink::WebString::FromASCII(main_frame_url)
+    );
+
+    RenderFrameImpl* local_root = const_cast<RenderFrameImpl*>(GetLocalRoot());
+    std::string main_frame_id = local_root->GetDevToolsFrameToken().ToString();
+    request.SetHttpHeaderField(
+      "x-hdy-main-frame-id",
+      blink::WebString::FromASCII(main_frame_id)
+    );
+
+    std::string frame_id = GetDevToolsFrameToken().ToString();
+    request.SetHttpHeaderField(
+      "x-hdy-frame-id",
+      blink::WebString::FromASCII(frame_id)
+    );
+
+    delete url;
+  }
+
 #if !defined(OS_ANDROID)
   for (auto& observer : observers_) {
     observer.WillSendRequest(request);
