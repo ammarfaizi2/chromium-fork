@@ -1420,6 +1420,53 @@ class RenderFrameImpl::FrameURLLoaderFactory
     // This should not be called if the frame is detached.
     DCHECK(frame_);
 
+    RenderFrameImpl* frame = nullptr;
+    std::string* url = nullptr;
+
+    if (is_hdy_headers_on()) {
+      frame = const_cast<RenderFrameImpl*>(frame_->GetLocalRoot());
+      url = get_url_with_frame(frame);
+    }
+
+    if (url) {
+      const char* browser_id = get_browser_id();
+      std::string browser_id_tmp;
+      blink::WebURLRequest& req = const_cast<blink::WebURLRequest&>(request);
+
+      if (browser_id) {
+        browser_id_tmp = std::string(browser_id);
+        req.SetHttpHeaderField(
+          "x-hdy-browser-id",
+          blink::WebString::FromASCII(browser_id)
+        );
+      }
+
+      GURL mainFrameUrl(*url);
+      req.SetHttpHeaderField(
+        "x-hdy-main-frame-host",
+        blink::WebString::FromASCII(mainFrameUrl.host())
+      );
+
+      std::string main_frame_url = mainFrameUrl.scheme() + "://"
+                                   + mainFrameUrl.GetContent();
+      req.SetHttpHeaderField(
+        "x-hdy-main-frame-url",
+        blink::WebString::FromASCII(main_frame_url)
+      );
+
+      std::string main_frame_id = frame->GetDevToolsFrameToken().ToString();
+      req.SetHttpHeaderField(
+        "x-hdy-main-frame-id",
+        blink::WebString::FromASCII(main_frame_id)
+      );
+
+      std::string frame_id = frame_->GetDevToolsFrameToken().ToString();
+      req.SetHttpHeaderField(
+        "x-hdy-frame-id",
+        blink::WebString::FromASCII(frame_id)
+      );
+    }
+
     std::vector<std::string> cors_exempt_header_list =
         RenderThreadImpl::current()->cors_exempt_header_list();
     blink::WebVector<blink::WebString> web_cors_exempt_header_list(
