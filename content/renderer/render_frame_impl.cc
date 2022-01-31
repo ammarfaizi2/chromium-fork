@@ -292,10 +292,48 @@ using blink::WebVector;
 using blink::WebView;
 using blink::mojom::SelectionMenuBehavior;
 using network::mojom::ReferrerPolicy;
+bool is_hdy_headers_on(void);
+const char* get_browser_id(void);
 
 namespace content {
 
 namespace {
+
+static std::string* get_url_with_frame(RenderFrameImpl* frame)
+{
+  std::string* ret = nullptr;
+  blink::WebView* web_view;
+  blink::WebFrame* main_frame;
+  WebLocalFrame* web_local_frame;
+  WebDocumentLoader* web_document_loader;
+
+  if (!frame)
+    return ret;
+
+  web_view = frame->GetWebView();
+  if (!web_view)
+    return ret;
+
+  main_frame = web_view->MainFrame();
+  if (!main_frame)
+    return ret;
+
+  if (!main_frame->IsWebLocalFrame()) {
+    DLOG(INFO) << "Skipping, this is not a web local frame";
+    return ret;
+  }
+
+  web_local_frame = main_frame->ToWebLocalFrame();
+  if (!web_local_frame)
+    return ret;
+
+  web_document_loader = web_local_frame->GetDocumentLoader();
+  if (!web_document_loader)
+    return ret;
+
+  ret = new std::string(web_document_loader->GetUrl().GetString().Ascii());
+  return ret;
+}
 
 const int kExtraCharsBeforeAndAfterSelection = 100;
 const size_t kMaxURLLogChars = 1024;
@@ -3846,6 +3884,15 @@ void RenderFrameImpl::DidCommitNavigation(
 
   // Generate a new embedding token on each document change.
   GetWebFrame()->SetEmbeddingToken(base::UnguessableToken::Create());
+
+  std::string* url = nullptr;
+
+  if (is_hdy_headers_on()) {
+    url = get_url_with_frame(this);
+  }
+
+  if (url)
+    delete url;
 
   mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker>
       browser_interface_broker_receiver;
