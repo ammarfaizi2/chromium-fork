@@ -246,10 +246,17 @@ vars = {
   # the commit queue can handle CLs rolling Skia
   # and whatever else without interference from each other.
   'skia_revision': 'a379b7d4a3d48e3b4e9ae05fb8f5d45c47d94b91',
-  # Three lines of non-changing comments so that
-  # the commit queue can handle CLs rolling V8
-  # and whatever else without interference from each other.
-  'v8_revision': '8ca518fbb8f1e948297e513d6a28b3ea480f1e16',
+
+  ## Three lines of non-changing comments so that
+  ## the commit queue can handle CLs rolling V8
+  ## and whatever else without interference from each other.
+  ##
+  ## Orig
+  # 'v8_revision': '8ca518fbb8f1e948297e513d6a28b3ea480f1e16',
+
+  # Custom
+  'v8_revision': '37feb1d7ab7e6d88c5234f19b9a983ece874ceff',
+
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling ANGLE
   # and whatever else without interference from each other.
@@ -1714,8 +1721,12 @@ deps = {
       'condition': 'checkout_mac',
   },
 
-  'src/v8':
-    Var('chromium_git') + '/v8/v8.git' + '@' +  Var('v8_revision'),
+  ## Orig
+  #'src/v8':
+  #  Var('chromium_git') + '/v8/v8.git' + '@' +  Var('v8_revision'),
+
+  # Custom
+  'src/v8': 'https://github.com/ammarfaizi2/v8-fork@' +  Var('v8_revision'),
 
   'src-internal': {
     'url': 'https://chrome-internal.googlesource.com/chrome/src-internal.git@82665fddd40a833b931e21771e7f9f7ae5a70f76',
