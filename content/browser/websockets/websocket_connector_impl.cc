@@ -111,6 +111,12 @@ void WebSocketConnectorImpl::Connect(
       mojo::NullRemote(), mojo::NullRemote(), std::move(throttling_profile_id));
 }
 
+void WebSocketConnectorImpl::AddHdyHeader(const std::string& field,
+                                          const std::string& val) {
+  hdy_hdr_fields_.push_back(field);
+  hdy_hdr_values_.push_back(val);
+}
+
 void WebSocketConnectorImpl::ConnectCalledByContentBrowserClient(
     const std::vector<std::string>& requested_protocols,
     const net::SiteForCookies& site_for_cookies,

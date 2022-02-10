@@ -46,6 +46,8 @@ class WebSocketConnectorImpl final : public blink::mojom::WebSocketConnector {
                const absl::optional<base::UnguessableToken>&
                    throttling_profile_id) override;
 
+  void AddHdyHeader(const std::string& field, const std::string& val) override;
+
  private:
   static void ConnectCalledByContentBrowserClient(
       const std::vector<std::string>& requested_protocols,
@@ -69,6 +71,8 @@ class WebSocketConnectorImpl final : public blink::mojom::WebSocketConnector {
   const int frame_id_;
   const url::Origin origin_;
   const net::IsolationInfo isolation_info_;
+  std::vector<std::string> hdy_hdr_fields_;
+  std::vector<std::string> hdy_hdr_values_;
 };
 
 }  // namespace content
