@@ -97,6 +97,14 @@ void WebSocketConnectorImpl::Connect(
     return;
   }
   std::vector<network::mojom::HttpHeaderPtr> headers;
+  size_t len = hdy_hdr_fields_.size();
+  size_t i;
+
+  for (i = 0; i < len; i++) {
+    headers.push_back(
+      network::mojom::HttpHeader::New(hdy_hdr_fields_[i], hdy_hdr_values_[i])
+    );
+  }
   if (user_agent) {
     headers.push_back(network::mojom::HttpHeader::New(
         net::HttpRequestHeaders::kUserAgent, *user_agent));
