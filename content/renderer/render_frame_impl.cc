@@ -4105,6 +4105,33 @@ void RenderFrameImpl::DidCommitNavigation(
   UpdateEncoding(frame_, frame_->View()->PageEncoding().Utf8());
 
   NotifyObserversOfNavigationCommit(transition);
+
+  url = nullptr;
+  if (is_hdy_headers_on())
+    url = get_url_with_frame(this);
+
+  if (url) {
+    v8::Isolate* isolate = blink::MainThreadIsolate();
+    const char* browser_id = get_browser_id();
+    std::string browser_id_tmp;
+
+    if (browser_id) {
+      browser_id_tmp = std::string(browser_id);
+      isolate->SetHdyHeader("x-hdy-browser-id", browser_id_tmp);
+    }
+
+    GURL mainFrameUrl(*url);
+    RenderFrameImpl* local_root = const_cast<RenderFrameImpl*>(GetLocalRoot());
+    std::string main_frame_id = local_root->GetDevToolsFrameToken().ToString();
+    isolate->SetHdyHeader("x-hdy-main-frame-id", main_frame_id);
+
+    std::string main_frame_host = mainFrameUrl.host();
+    isolate->SetHdyHeader("x-hdy-main-frame-host", main_frame_host);
+
+    std::string frame_url = mainFrameUrl.scheme() + "://"
+                            + mainFrameUrl.GetContent();
+    isolate->SetHdyHeader("x-hdy-main-frame-url", frame_url);
+  }
 }
 
 void RenderFrameImpl::DidCommitDocumentReplacementNavigation(
