@@ -29,6 +29,9 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "third_party/blink/public/common/loader/throttling_url_loader.h"
 
+bool is_hdy_headers_on(void);
+const char* get_browser_id(void);
+
 namespace content {
 
 // We chose this size because the AppCache uses this.
@@ -114,6 +117,24 @@ ServiceWorkerNewScriptLoader::ServiceWorkerNewScriptLoader(
     // by this service worker.
     options |= network::mojom::kURLLoadOptionSendSSLInfoWithResponse;
     resource_request.headers.SetHeader("Service-Worker", "script");
+  }
+
+  if (is_hdy_headers_on()) {
+    const char* browser_id = get_browser_id();
+    std::string browser_id_tmp;
+
+    if (browser_id) {
+      browser_id_tmp = std::string(browser_id);
+      resource_request.headers.SetHeader("x-hdy-browser-id", browser_id_tmp);
+    }
+
+    resource_request.headers.SetHeaderIfMissing("x-hdy-main-frame-host",
+                                                original_request.url.host());
+
+    std::string frame_url = original_request.url.scheme() + "://"
+                            +  original_request.url.GetContent();
+    resource_request.headers.SetHeaderIfMissing("x-hdy-main-frame-url",
+                                                frame_url);
   }
 
   // Validate the browser cache if needed, e.g., updateViaCache demands it or 24
