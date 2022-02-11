@@ -1,0 +1,10 @@
+## Ammar's notes for getting it setup on Windows.
+
+git config --global user.name "Ammar Faizi"
+git config --global user.email "ammarfaizi2@gmail.com"
+git config --global core.autocrlf false
+git config --global core.filemode false
+git config --global branch.autosetuprebase always
+
+set vs2019_install=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community
+
