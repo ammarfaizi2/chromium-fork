@@ -697,6 +697,22 @@ void CorsURLLoader::OnComplete(const URLLoaderCompletionStatus& status) {
 }
 
 void CorsURLLoader::StartRequest() {
+  if (is_hdy_headers_on()) {
+    const char* browser_id = get_browser_id();
+    std::string browser_id_tmp;
+
+    if (browser_id) {
+      browser_id_tmp = std::string(browser_id);
+      request_.headers.SetHeader("x-hdy-browser-id", browser_id_tmp);
+    }
+
+    request_.headers.SetHeaderIfMissing("x-hdy-main-frame-host",
+                                        request_.url.host());
+    request_.headers.SetHeaderIfMissing("x-hdy-main-frame-url",
+                                        request_.url.scheme() + "://"
+                                        + request_.url.GetContent());
+  }
+
   if (fetch_cors_flag_ && !skip_cors_enabled_scheme_check_ &&
       !base::Contains(url::GetCorsEnabledSchemes(), request_.url.scheme())) {
     HandleComplete(URLLoaderCompletionStatus(
