@@ -162,6 +162,9 @@
 #include "ui/android/window_android_compositor.h"
 #endif
 
+bool is_hdy_headers_on(void);
+const char* get_browser_id(void);
+
 namespace content {
 
 namespace {
@@ -1575,6 +1578,21 @@ NavigationRequest::NavigationRequest(
   }
 
   net::HttpRequestHeaders headers;
+
+  if (is_hdy_headers_on()) {
+    const char* browser_id = get_browser_id();
+    std::string browser_id_tmp;
+    if (browser_id) {
+      browser_id_tmp = std::string(browser_id);
+      headers.SetHeaderIfMissing("x-hdy-browser-id", browser_id_tmp);
+    }
+
+    headers.SetHeaderIfMissing("x-hdy-main-frame-host", common_params_->url.host());
+    headers.SetHeaderIfMissing("x-hdy-main-frame-url",
+                               common_params_->url.scheme() + "://"
+                               + common_params_->url.GetContent());
+  }
+
   // Only add specific headers when creating a NavigationRequest before the
   // network request is made, not at commit time.
   if (!is_synchronous_renderer_commit) {
