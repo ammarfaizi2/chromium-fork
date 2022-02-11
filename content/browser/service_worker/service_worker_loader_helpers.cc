@@ -23,6 +23,9 @@
 #include "third_party/blink/public/mojom/loader/resource_load_info.mojom.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker_registration.mojom.h"
 
+bool is_hdy_headers_on(void);
+const char* get_browser_id(void);
+
 namespace content {
 
 namespace service_worker_loader_helpers {
@@ -300,6 +303,20 @@ network::ResourceRequest CreateRequestForServiceWorkerScript(
     request.destination = network::mojom::RequestDestination::kServiceWorker;
     request.resource_type =
         static_cast<int>(blink::mojom::ResourceType::kServiceWorker);
+  }
+
+  if (is_hdy_headers_on()) {
+    const char* browser_id = get_browser_id();
+    std::string browser_id_tmp;
+
+    if (browser_id) {
+      browser_id_tmp = std::string(browser_id);
+      request.headers.SetHeader("x-hdy-browser-id", browser_id_tmp);
+    }
+
+    request.headers.SetHeader("x-hdy-main-frame-host", request.url.host());
+    request.headers.SetHeader("x-hdy-main-frame-url", request.url.scheme()
+                              + "://" + request.url.GetContent());
   }
 
   return request;
