@@ -55,6 +55,11 @@
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
 #include "third_party/blink/renderer/platform/wtf/ref_counted.h"
+#include <string>
+#include <vector>
+#include "third_party/blink/public/web/web_navigation_control.h"
+#include "third_party/blink/public/web/web_v8_features.h"
+#include "third_party/blink/renderer/platform/bindings/script_forbidden_scope.h"
 
 namespace blink {
 
@@ -112,6 +117,15 @@ class PLATFORM_EXPORT ResourceRequestHead {
 
   ~ResourceRequestHead();
 
+  void AttachWebLocalFrame(blink::WebNavigationControl* frame);
+  void StoreHeaderInWebLocalFrame(std::string name, std::string value);
+
+ private:
+  blink::WebNavigationControl* frame_ = nullptr;
+  std::vector<std::string> queued_header_fields;
+  std::vector<std::string> queued_header_values;
+
+ public:
   // Constructs a new ResourceRequest for a redirect from this instance.
   // Since body for a redirect request is kept and handled in the network
   // service, the returned instance here in blink side doesn't contain body.
