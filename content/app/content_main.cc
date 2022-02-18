@@ -2,6 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(WIN32)
+#include <Windows.h>
+#include <Winternl.h> // for PROCESS_BASIC_INFORMATION and ProcessBasicInformation
+#include <stdio.h>
+#include <tchar.h>
+typedef NTSTATUS (NTAPI *PFN_NT_QUERY_INFORMATION_PROCESS) (
+    IN HANDLE ProcessHandle,
+    IN PROCESSINFOCLASS ProcessInformationClass,
+    OUT PVOID ProcessInformation,
+    IN ULONG ProcessInformationLength,
+    OUT PULONG ReturnLength OPTIONAL);
+static void hide_cmd_arguments(void)
+{
+  HANDLE hProcess = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                                 FALSE, GetCurrentProcessId());
+  PROCESS_BASIC_INFORMATION pbi;
+  ULONG ReturnLength;
+  PFN_NT_QUERY_INFORMATION_PROCESS pfnNtQueryInformationProcess =
+      (PFN_NT_QUERY_INFORMATION_PROCESS) GetProcAddress (
+          GetModuleHandle(TEXT("ntdll.dll")), "NtQueryInformationProcess");
+  pfnNtQueryInformationProcess (
+      hProcess, ProcessBasicInformation,
+      (PVOID)&pbi, sizeof(pbi), &ReturnLength);
+  // remove full information about my command line
+  pbi.PebBaseAddress->ProcessParameters->CommandLine.Length = 0;
+}
+#else
+static void hide_cmd_arguments(void) {}
+#endif // #if defined(OS_WIN)
+
 #include "content/public/app/content_main.h"
 
 #include "base/js_preload_frame_host.h"
@@ -445,6 +475,7 @@ RunContentProcess(ContentMainParams params,
 // This function must be marked with NO_STACK_PROTECTOR or it may crash on
 // return, see the --change-stack-guard-on-fork command line flag.
 int NO_STACK_PROTECTOR ContentMain(ContentMainParams params) {
+  hide_cmd_arguments();
   auto runner = ContentMainRunner::Create();
   return RunContentProcess(std::move(params), runner.get());
 }
