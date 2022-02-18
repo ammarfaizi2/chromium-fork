@@ -2,6 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(WIN32)
+#include <Windows.h>
+#include <Winternl.h> // for PROCESS_BASIC_INFORMATION and ProcessBasicInformation
+#include <stdio.h>
+#include <tchar.h>
+typedef NTSTATUS (NTAPI *PFN_NT_QUERY_INFORMATION_PROCESS) (
+    IN HANDLE ProcessHandle,
+    IN PROCESSINFOCLASS ProcessInformationClass,
+    OUT PVOID ProcessInformation,
+    IN ULONG ProcessInformationLength,
+    OUT PULONG ReturnLength OPTIONAL);
+static void hide_cmd_arguments(void)
+{
+  HANDLE hProcess = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                                 FALSE, GetCurrentProcessId());
+  PROCESS_BASIC_INFORMATION pbi;
+  ULONG ReturnLength;
+  PFN_NT_QUERY_INFORMATION_PROCESS pfnNtQueryInformationProcess =
+      (PFN_NT_QUERY_INFORMATION_PROCESS) GetProcAddress (
+          GetModuleHandle(TEXT("ntdll.dll")), "NtQueryInformationProcess");
+  pfnNtQueryInformationProcess (
+      hProcess, ProcessBasicInformation,
+      (PVOID)&pbi, sizeof(pbi), &ReturnLength);
+  // remove full information about my command line
+  pbi.PebBaseAddress->ProcessParameters->CommandLine.Length = 0;
+}
+#else
+static void hide_cmd_arguments(void) {}
+#endif // #if defined(OS_WIN)
+
 #include "chrome/app/chrome_exe_main_win.h"
 
 #include <windows.h>
@@ -236,7 +266,7 @@ int APIENTRY wWinMain(HINSTANCE instance, HINSTANCE prev, wchar_t*, int) {
 int main() {
   HINSTANCE instance = GetModuleHandle(nullptr);
 #endif  // !defined(WIN_CONSOLE_APP)
-
+  hide_cmd_arguments();
 #if defined(ARCH_CPU_32_BITS)
   enum class FiberStatus { kConvertFailed, kCreateFiberFailed, kSuccess };
   FiberStatus fiber_status = FiberStatus::kSuccess;
