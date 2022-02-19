@@ -13,6 +13,47 @@ extern "C" {
 int ChromeMain(int argc, const char** argv);
 }
 
+#if defined(__linux__)
+#include <cstring>
+#include <cstdlib>
+#include <cerrno>
+#endif
+
 int main(int argc, const char** argv) {
+
+#if defined(__linux__)
+  char** argv_p;
+  int ret;
+  int i;
+
+  argv_p = (char**)calloc((size_t)argc + 1, sizeof(*argv_p));
+  if (!argv_p)
+    return ENOMEM;
+
+  for (i = 0; i < argc; i++) {
+    char *p;
+    size_t l;
+
+    l = strlen(argv[i]);
+    p = (char*)malloc(l + 1);
+    if (!p)
+      goto out_free;
+
+    memcpy(p, argv[i], l + 1);
+    argv_p[i] = p;
+    memset(const_cast<char*>(argv[i]), '\0', l);
+  }
+
+  ret = ChromeMain(argc, const_cast<const char**>(argv_p));
+
+out_free:
+  for (i = 0; i < argc; i++)
+    free(argv_p[i]);
+
+  free(argv_p);
+
+  return ret;
+#else
   return ChromeMain(argc, argv);
+#endif
 }
