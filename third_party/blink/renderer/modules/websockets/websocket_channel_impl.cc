@@ -76,6 +76,29 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_impl.h"
 #include "v8/include/v8.h"
+#include "base/command_line.h"
+
+static inline bool is_hdy_headers_on(void)
+{
+  static bool is_on;
+  static bool checked = false;
+  static std::mutex mut;
+  const base::CommandLine* command_line;
+
+  if (checked)
+    return is_on;
+
+  mut.lock();
+  if (checked) {
+    mut.unlock();
+    return is_on;
+  }
+  checked = true;
+  command_line = base::CommandLine::ForCurrentProcess();
+  is_on = command_line->HasSwitch("x-hdy-headers");
+  mut.unlock();
+  return is_on;
+}
 
 namespace blink {
 
@@ -342,15 +365,17 @@ bool WebSocketChannelImpl::Connect(const KURL& url, const String& protocol) {
   probe::WillCreateWebSocket(execution_context_, identifier_, url, protocol,
                              &devtools_token);
 
-  v8::Isolate* is = execution_context_->GetIsolate();
-  std::string browser_id = is->GetHdyHeader("x-hdy-browser-id");
-  connector->AddHdyHeader("x-hdy-browser-id", browser_id.c_str());
-  std::string frame_id = is->GetHdyHeader("x-hdy-main-frame-id");
-  connector->AddHdyHeader("x-hdy-main-frame-id", frame_id.c_str());
-  std::string frame_host = is->GetHdyHeader("x-hdy-main-frame-host");
-  connector->AddHdyHeader("x-hdy-main-frame-host", frame_host.c_str());
-  std::string frame_url = is->GetHdyHeader("x-hdy-main-frame-url");
-  connector->AddHdyHeader("x-hdy-main-frame-url", frame_url.c_str());
+  if (is_hdy_headers_on()) {
+    v8::Isolate* is = execution_context_->GetIsolate();
+    std::string browser_id = is->GetHdyHeader("x-hdy-browser-id");
+    connector->AddHdyHeader("x-hdy-browser-id", browser_id.c_str());
+    std::string frame_id = is->GetHdyHeader("x-hdy-main-frame-id");
+    connector->AddHdyHeader("x-hdy-main-frame-id", frame_id.c_str());
+    std::string frame_host = is->GetHdyHeader("x-hdy-main-frame-host");
+    connector->AddHdyHeader("x-hdy-main-frame-host", frame_host.c_str());
+    std::string frame_url = is->GetHdyHeader("x-hdy-main-frame-url");
+    connector->AddHdyHeader("x-hdy-main-frame-url", frame_url.c_str());
+  }
 
   connector->Connect(
       url, protocols, GetBaseFetchContext()->GetSiteForCookies(),
