@@ -30,6 +30,7 @@ namespace net {
 
 namespace {
 
+// Task 7 already done.
 // Limit of sockets of each socket pool.
 int g_max_sockets_per_pool[] = {
   256,  // NORMAL_SOCKET_POOL
