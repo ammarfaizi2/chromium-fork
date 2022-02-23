@@ -301,6 +301,55 @@ const char* get_browser_id(void);
 
 namespace content {
 
+void NativeArrayMultiply(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  v8::Isolate* isolate = args.GetIsolate();
+  v8::HandleScope scope(isolate);
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+  v8::Local<v8::Array> array;
+  double element;
+  double multiplier;
+
+  if (!args.Length()) {
+    isolate->ThrowException(v8::Exception::RangeError(
+      v8::String::NewFromUtf8(isolate, "Arguments are missing")
+      .ToLocalChecked())
+    );
+    return;
+  } else if (!args[0]->IsArray()) {
+    isolate->ThrowException(v8::Exception::TypeError(
+      v8::String::NewFromUtf8(isolate, "First argument must be an Array")
+      .ToLocalChecked())
+    );
+    return;
+  } else if (args.Length() > 1 && !args[1]->IsNumber()) {
+    isolate->ThrowException(v8::Exception::TypeError(
+      v8::String::NewFromUtf8(isolate, "Second argument must be a Number")
+      .ToLocalChecked()
+    ));
+    return;
+  }
+
+  array = v8::Local<v8::Array>::Cast(args[0]);
+
+  if (args.Length() > 1) {
+    multiplier = args[1]->ToNumber(context).ToLocalChecked()->Value();
+  } else {
+    multiplier = 1;
+  }
+
+  for (uint32_t i = 0; i < array->Length(); i++){
+    // Get current element
+    element = array->Get(context, i).ToLocalChecked()->ToNumber(context)
+              .ToLocalChecked()->Value();
+
+    // Do something ...
+    element *= multiplier;
+
+    // Put element back
+    array->Set(context, i, v8::Number::New(isolate, element)).ToChecked();
+  }
+}
+
 namespace {
 
 static std::string* get_url_with_frame(RenderFrameImpl* frame)
@@ -4051,6 +4100,22 @@ void RenderFrameImpl::DidCommitNavigation(
         v8::Number::New(isolate, -1)
       ).ToChecked();
     }
+  }
+
+  // task_g_002: Create a native function that can take arrays from JavaScript
+  {
+    v8::Isolate* isolate = blink::MainThreadIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::MicrotasksScope microtasks_scope(isolate,
+                                         v8::MicrotasksScope::kRunMicrotasks);
+    v8::HandleScope handle_scope(isolate);
+    v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+    context->Global()->Set(
+      context,
+      v8::String::NewFromUtf8(isolate, "mul").ToLocalChecked(),
+      v8::FunctionTemplate::New(isolate, NativeArrayMultiply)
+        ->GetFunction(context).ToLocalChecked()
+    ).ToChecked();
   }
 
   mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker>
