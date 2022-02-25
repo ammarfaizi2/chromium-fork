@@ -296,6 +296,31 @@ using web_modal::WebContentsModalDialogManager;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static inline const char* get_browser_id(void)
+{
+  static char browser_id[255];
+  static bool checked = false;
+  static std::mutex mut;
+  const base::CommandLine* command_line = nullptr;
+
+  if (checked)
+    return browser_id;
+
+  mut.lock();
+  if (checked) {
+    mut.unlock();
+    return browser_id;
+  }
+  checked = true;
+  command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch("browser-id")) {
+    std::string tmp = command_line->GetSwitchValueASCII("browser-id");
+    strncpy(browser_id, tmp.c_str(), sizeof(browser_id) - 1);
+  }
+  mut.unlock();
+  return browser_id;
+}
+
 namespace {
 
 // How long we wait before updating the browser chrome while loading a page.
@@ -785,27 +810,35 @@ std::u16string Browser::GetWindowTitleFromWebContents(
   if (title.empty() && (is_type_normal() || is_type_popup()))
     title = CoreTabHelper::GetDefaultTitle();
 
-#if defined(OS_MAC)
-  // On Mac, we don't want to suffix the page title with the application name.
-  return title;
-#else
-  // If there is no title and this is an app, fall back on the app name. This
-  // ensures that the native window gets a title which is important for a11y,
-  // for example the window selector uses the Aura window title.
-  if (title.empty() &&
-      (is_type_app() || is_type_app_popup() || is_type_devtools()) &&
-      include_app_name) {
-    return app_controller_ ? app_controller_->GetAppShortName()
-                           : base::UTF8ToUTF16(app_name());
-  }
+  const char* browser_id = get_browser_id();
+  if (!browser_id)
+    browser_id = "-";
 
-  // Include the app name in window titles for tabbed browser windows when
-  // requested with |include_app_name|.
-  return ((is_type_normal() || is_type_popup()) && include_app_name)
-             ? l10n_util::GetStringFUTF16(IDS_BROWSER_WINDOW_TITLE_FORMAT,
-                                          title)
-             : title;
-#endif
+  return title + std::u16string(
+    base::UTF8ToUTF16(std::string(" - Hoody Stream (") + std::string(browser_id)
+                                  + std::string(")")));
+
+// #if defined(OS_MAC)
+//   // On Mac, we don't want to suffix the page title with the application name.
+//   return title;
+// #else
+//   // If there is no title and this is an app, fall back on the app name. This
+//   // ensures that the native window gets a title which is important for a11y,
+//   // for example the window selector uses the Aura window title.
+//   if (title.empty() &&
+//       (is_type_app() || is_type_app_popup() || is_type_devtools()) &&
+//       include_app_name) {
+//     return app_controller_ ? app_controller_->GetAppShortName()
+//                            : base::UTF8ToUTF16(app_name());
+//   }
+
+//   // Include the app name in window titles for tabbed browser windows when
+//   // requested with |include_app_name|.
+//   return ((is_type_normal() || is_type_popup()) && include_app_name)
+//              ? l10n_util::GetStringFUTF16(IDS_BROWSER_WINDOW_TITLE_FORMAT,
+//                                           title)
+//              : title;
+// #endif
 }
 
 // static
