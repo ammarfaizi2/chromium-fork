@@ -214,7 +214,7 @@ bool IsWindows10OrGreaterTabletMode(HWND hwnd) {
     DWORD slate_mode = 0;
     bool value_exists = registry_key.ReadValueDW(L"ConvertibleSlateMode",
                                                  &slate_mode) == ERROR_SUCCESS;
-    DCHECK(value_exists) << "ConvertibleSlateMode value not in registry";
+    // DCHECK(value_exists) << "ConvertibleSlateMode value not in registry";
     // Some devices don't set the reg key to 0 for non touch devices, so also
     // check if the device is used as a tablet.
     return value_exists && slate_mode == 0 &&
