@@ -1,3 +1,11 @@
+# Set build arguments here. See `gn help buildargs`.
+is_component_build = true
+is_debug = false
+enable_nacl = false
+blink_symbol_level = 1
+v8_symbol_level = 1
+symbol_level = 1
+dcheck_always_on = false
 
 # Task 4
 proprietary_codecs = true
