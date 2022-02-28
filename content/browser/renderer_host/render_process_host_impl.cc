@@ -3331,6 +3331,8 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     "browser-id",
     "x-hdy-headers",
     "preload-js-file",
+    "timezone",
+    "timezone-ms",
     switches::kDisableInProcessStackTraces,
     sandbox::policy::switches::kDisableSeccompFilterSandbox,
     sandbox::policy::switches::kNoSandbox,
