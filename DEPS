@@ -255,7 +255,7 @@ vars = {
   # 'v8_revision': '8ca518fbb8f1e948297e513d6a28b3ea480f1e16',
 
   # Custom
-  'v8_revision': '37feb1d7ab7e6d88c5234f19b9a983ece874ceff',
+  'v8_revision': 'a1c7bb44d16dc3baeb7dc92409fb40a8a927563f',
 
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling ANGLE
