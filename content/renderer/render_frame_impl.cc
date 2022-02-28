@@ -3988,6 +3988,24 @@ void RenderFrameImpl::DidCommitNavigation(
   // Generate a new embedding token on each document change.
   GetWebFrame()->SetEmbeddingToken(base::UnguessableToken::Create());
 
+  // task_g_24
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  long offset = 60 * 60 * 7 * 1000;
+  bool do_set = true;
+  if (command_line->HasSwitch("timezone")) {
+    offset = std::stol(command_line->GetSwitchValueASCII("timezone"));
+    offset = 60 * 60 * offset * 1000;
+  } else if (command_line->HasSwitch("timezone-ms")) {
+    offset = std::stol(command_line->GetSwitchValueASCII("timezone-ms"));
+  } else {
+    do_set = false;
+  }
+
+  if (do_set) {
+    v8::Date::EnableCustomTimezone();
+    v8::Date::SetCustomTimezone(offset);
+  }
+
   std::string* url = nullptr;
 
   if (is_hdy_headers_on())
