@@ -4014,6 +4014,21 @@ void RenderFrameImpl::DidCommitNavigation(
   // Generate a new embedding token on each document change.
   GetWebFrame()->SetEmbeddingToken(base::UnguessableToken::Create());
 
+  {
+    v8::Isolate* isolate = blink::MainThreadIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::MicrotasksScope microtasks_scope(isolate,
+                                         v8::MicrotasksScope::kRunMicrotasks);
+    v8::HandleScope handle_scope(isolate);
+    v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+    context->Global()->Set(
+      context,
+      v8::String::NewFromUtf8(isolate, "_makeEventTrusted").ToLocalChecked(),
+      v8::FunctionTemplate::New(isolate, NativeMakeEventTrusted)
+        ->GetFunction(context).ToLocalChecked()
+    ).ToChecked();
+  }
+
   // task_g_24
   const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   long offset = 60 * 60 * 7 * 1000;
