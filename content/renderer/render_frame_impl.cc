@@ -305,6 +305,28 @@ const char* get_browser_id(void);
 
 namespace content {
 
+void NativeMakeEventTrusted(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  v8::Isolate* isolate = args.GetIsolate();
+  v8::HandleScope scope(isolate);
+  v8::Local<v8::Object> object;
+  blink::ScriptWrappable* wrapper;
+  blink::Event* event;
+
+  if (!args.Length()) {
+    isolate->ThrowException(v8::Exception::RangeError(
+      v8::String::NewFromUtf8(isolate, "Event is missing").ToLocalChecked()));
+    return;
+  }
+
+  object = v8::Local<v8::Object>::Cast(args[0]);
+  wrapper = blink::ToScriptWrappable(object);
+  event = wrapper->ToImpl<blink::Event>();
+
+  if (!event->isTrusted()) {
+    event->SetTrusted(true);
+  }
+}
+
 void NativeArrayMultiply(const v8::FunctionCallbackInfo<v8::Value>& args) {
   v8::Isolate* isolate = args.GetIsolate();
   v8::HandleScope scope(isolate);
