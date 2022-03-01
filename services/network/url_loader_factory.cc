@@ -34,6 +34,7 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "base/command_line.h"
 
 namespace network {
 
@@ -116,6 +117,19 @@ void URLLoaderFactory::CreateLoaderAndStart(
     const ResourceRequest& url_request,
     mojo::PendingRemote<mojom::URLLoaderClient> client,
     const net::MutableNetworkTrafficAnnotationTag& traffic_annotation) {
+
+  const base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+
+  if (command_line.HasSwitch("block-ipv6") && url_request.url.HostIsIPAddress()
+      && url_request.url.host()[0] == '[') {
+    URLLoaderCompletionStatus status;
+    status.error_code = net::ERR_NAME_RESOLUTION_FAILED;
+    status.exists_in_cache = false;
+    status.completion_time = base::TimeTicks::Now();
+    mojo::Remote<mojom::URLLoaderClient>(std::move(client))->OnComplete(status);
+    return;
+  }
+
   CreateLoaderAndStartWithSyncClient(
       std::move(receiver), request_id, options, url_request, std::move(client),
       /* sync_client= */ nullptr, traffic_annotation);
