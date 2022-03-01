@@ -238,6 +238,10 @@
 #include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_response.h"
 
+#include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
+#include "third_party/blink/renderer/platform/bindings/wrapper_type_info.h"
+#include "third_party/blink/renderer/core/dom/events/event.h"
+
 #if BUILDFLAG(ENABLE_PLUGINS)
 #include "content/renderer/pepper/pepper_browser_connection.h"
 #include "content/renderer/pepper/pepper_plugin_instance_impl.h"
