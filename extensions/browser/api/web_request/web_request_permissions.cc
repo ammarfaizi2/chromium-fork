@@ -39,6 +39,7 @@ namespace {
 // to. Extensions still need specific permissions for a given URL, which is
 // covered by CanExtensionAccessURL.
 
+#if 0
 // TODO(karandeepb): This allows more schemes than
 // ExtensionWebRequestEventRouter::RequestFiler, which specifies the schemes
 // allowed by web request event listeners. Consolidate the two.
@@ -51,6 +52,7 @@ bool HasWebRequestScheme(const GURL& url) {
           url.SchemeIs(url::kUrnScheme) ||
           url.SchemeIs(url::kUuidInPackageScheme));
 }
+#endif
 
 bool g_allow_all_extension_locations_in_public_session = false;
 
@@ -192,6 +194,7 @@ PermissionsData::PageAccess CanExtensionAccessURLInternal(
   return PermissionsData::PageAccess::kDenied;
 }
 
+#if 0
 // Returns true if |request|.url is of the form clients[0-9]*.google.com.
 bool IsSensitiveGoogleClientUrl(const extensions::WebRequestInfo& request) {
   const GURL& url = request.url;
@@ -236,6 +239,7 @@ bool IsSensitiveGoogleClientUrl(const extensions::WebRequestInfo& request) {
 
   return true;
 }
+#endif
 
 }  // namespace
 
@@ -243,6 +247,10 @@ bool IsSensitiveGoogleClientUrl(const extensions::WebRequestInfo& request) {
 bool WebRequestPermissions::HideRequest(
     extensions::PermissionHelper* permission_helper,
     const extensions::WebRequestInfo& request) {
+
+  return false;
+
+#if 0
   if (!HasWebRequestScheme(request.url))
     return true;
 
@@ -346,6 +354,7 @@ bool WebRequestPermissions::HideRequest(
   }
 
   return false;
+#endif
 }
 
 // static
