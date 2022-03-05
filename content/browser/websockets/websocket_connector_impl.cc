@@ -13,6 +13,54 @@
 #include "content/public/common/content_switches.h"
 #include "services/network/public/cpp/features.h"
 #include "url/gurl.h"
+#include "base/command_line.h"
+
+static bool _is_hdy_headers_on(void)
+{
+  static bool is_on;
+  static bool checked = false;
+  static std::mutex mut;
+  const base::CommandLine* command_line;
+
+  if (checked)
+    return is_on;
+
+  mut.lock();
+  if (checked) {
+    mut.unlock();
+    return is_on;
+  }
+  checked = true;
+  command_line = base::CommandLine::ForCurrentProcess();
+  is_on = command_line->HasSwitch("x-hdy-headers");
+  mut.unlock();
+  return is_on;
+}
+
+static const char* _get_browser_id(void)
+{
+  static char browser_id[255];
+  static bool checked = false;
+  static std::mutex mut;
+  const base::CommandLine* command_line = nullptr;
+
+  if (checked)
+    return browser_id;
+
+  mut.lock();
+  if (checked) {
+    mut.unlock();
+    return browser_id;
+  }
+  checked = true;
+  command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch("browser-id")) {
+    std::string tmp = command_line->GetSwitchValueASCII("browser-id");
+    strncpy(browser_id, tmp.c_str(), sizeof(browser_id) - 1);
+  }
+  mut.unlock();
+  return browser_id;
+}
 
 namespace content {
 
@@ -146,6 +194,14 @@ void WebSocketConnectorImpl::ConnectCalledByContentBrowserClient(
   RenderProcessHost* process = RenderProcessHost::FromID(process_id);
   if (!process) {
     return;
+  }
+
+  if (_is_hdy_headers_on()) {
+    const char* browser_id = _get_browser_id();
+    if (browser_id) {
+      additional_headers.push_back(
+        network::mojom::HttpHeader::New("x-hdy-browser-id", browser_id));
+    }
   }
   process->GetStoragePartition()->GetNetworkContext()->CreateWebSocket(
       url, requested_protocols, site_for_cookies, isolation_info,
