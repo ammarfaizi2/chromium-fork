@@ -162,8 +162,7 @@
 #include "ui/android/window_android_compositor.h"
 #endif
 
-bool is_hdy_headers_on(void);
-const char* get_browser_id(void);
+#include "base/cloudbrowser/xhdy_helpers.h"
 
 namespace content {
 
