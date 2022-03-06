@@ -233,6 +233,7 @@
 #include "v8/include/v8-isolate.h"
 #include "v8/include/v8-local-handle.h"
 #include "v8/include/v8-microtask-queue.h"
+#include "base/cloudbrowser/xhdy_helpers.h"
 
 #include "third_party/blink/renderer/platform/network/http_header_map.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
@@ -300,8 +301,6 @@ using blink::WebVector;
 using blink::WebView;
 using blink::mojom::SelectionMenuBehavior;
 using network::mojom::ReferrerPolicy;
-bool is_hdy_headers_on(void);
-const char* get_browser_id(void);
 
 namespace content {
 
