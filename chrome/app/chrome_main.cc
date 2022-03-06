@@ -20,6 +20,15 @@
 #include "headless/app/headless_shell_switches.h"
 #include "headless/public/headless_shell.h"
 #include "ui/gfx/switches.h"
+#include "base/cloudbrowser/xhdy_helpers.h"
+
+bool is_hdy_headers_on(void) {
+  return __is_hdy_headers_on();
+}
+
+const char* get_browser_id(void) {
+  return __get_browser_id();
+}
 
 #if defined(OS_MAC)
 #include "chrome/app/chrome_main_mac.h"
