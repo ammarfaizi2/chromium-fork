@@ -195,6 +195,7 @@
 #include "ui/gl/gl_switches.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "base/cloudbrowser/xhdy_helpers.h"
 
 #if defined(OS_ANDROID)
 #include "content/browser/android/java_interfaces_impl.h"
@@ -264,55 +265,12 @@
 #define MAYBEVLOG DVLOG
 #endif
 
-bool is_hdy_headers_on(void);
-
-bool is_hdy_headers_on(void)
-{
-  static bool is_on;
-  static bool checked = false;
-  static std::mutex mut;
-  const base::CommandLine* command_line;
-
-  if (checked)
-    return is_on;
-
-  mut.lock();
-  if (checked) {
-    mut.unlock();
-    return is_on;
-  }
-  checked = true;
-  command_line = base::CommandLine::ForCurrentProcess();
-  is_on = command_line->HasSwitch("x-hdy-headers");
-  mut.unlock();
-  return is_on;
+bool is_hdy_headers_on(void) {
+  return __is_hdy_headers_on();
 }
 
-const char* get_browser_id(void);
-
-const char* get_browser_id(void)
-{
-  static char browser_id[255];
-  static bool checked = false;
-  static std::mutex mut;
-  const base::CommandLine* command_line = nullptr;
-
-  if (checked)
-    return browser_id;
-
-  mut.lock();
-  if (checked) {
-    mut.unlock();
-    return browser_id;
-  }
-  checked = true;
-  command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line->HasSwitch("browser-id")) {
-    std::string tmp = command_line->GetSwitchValueASCII("browser-id");
-    strncpy(browser_id, tmp.c_str(), sizeof(browser_id) - 1);
-  }
-  mut.unlock();
-  return browser_id;
+const char* get_browser_id(void) {
+  return __get_browser_id();
 }
 
 namespace content {
