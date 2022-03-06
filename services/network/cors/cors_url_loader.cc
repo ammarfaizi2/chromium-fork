@@ -30,66 +30,14 @@
 #include "services/network/url_loader_factory.h"
 #include "url/url_util.h"
 #include "base/command_line.h"
+#include "base/cloudbrowser/xhdy_helpers.h"
 
-// For some reason, it's not fully linked with is_hdy_headers_on() from
-// the different translation unit.
-//
-// ld.lld: error: undefined symbol: is_hdy_headers_on()
-// >>> referenced by cors_url_loader.cc:641 (../../services/network/cors/cors_url_loader.cc:641)
-// >>>               obj/services/network/network_service/cors_url_loader.o:(network::cors::CorsURLLoader::StartRequest())
-
-// ld.lld: error: undefined symbol: get_browser_id()
-// >>> referenced by cors_url_loader.cc:642 (../../services/network/cors/cors_url_loader.cc:642)
-// >>>               obj/services/network/network_service/cors_url_loader.o:(network::cors::CorsURLLoader::StartRequest())
-// clang++: error: linker command failed with exit code 1 (use -v to see invocation)
-//
-// So, we create static inline functions here.
-
-static inline bool is_hdy_headers_on(void)
-{
-  static bool is_on;
-  static bool checked = false;
-  static std::mutex mut;
-  const base::CommandLine* command_line;
-
-  if (checked)
-    return is_on;
-
-  mut.lock();
-  if (checked) {
-    mut.unlock();
-    return is_on;
-  }
-  checked = true;
-  command_line = base::CommandLine::ForCurrentProcess();
-  is_on = command_line->HasSwitch("x-hdy-headers");
-  mut.unlock();
-  return is_on;
+bool is_hdy_headers_on(void) {
+  return __is_hdy_headers_on();
 }
 
-static inline const char* get_browser_id(void)
-{
-  static char browser_id[255];
-  static bool checked = false;
-  static std::mutex mut;
-  const base::CommandLine* command_line = nullptr;
-
-  if (checked)
-    return browser_id;
-
-  mut.lock();
-  if (checked) {
-    mut.unlock();
-    return browser_id;
-  }
-  checked = true;
-  command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line->HasSwitch("browser-id")) {
-    std::string tmp = command_line->GetSwitchValueASCII("browser-id");
-    strncpy(browser_id, tmp.c_str(), sizeof(browser_id) - 1);
-  }
-  mut.unlock();
-  return browser_id;
+const char* get_browser_id(void) {
+  return __get_browser_id();
 }
 
 namespace network {
