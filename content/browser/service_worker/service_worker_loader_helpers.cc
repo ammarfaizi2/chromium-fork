@@ -23,8 +23,7 @@
 #include "third_party/blink/public/mojom/loader/resource_load_info.mojom.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker_registration.mojom.h"
 
-bool is_hdy_headers_on(void);
-const char* get_browser_id(void);
+#include "base/cloudbrowser/xhdy_helpers.h"
 
 namespace content {
 
