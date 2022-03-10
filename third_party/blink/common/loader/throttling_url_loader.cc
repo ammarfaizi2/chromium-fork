@@ -48,6 +48,11 @@ void CheckThrottleWillNotCauseCorsPreflight(
   base::flat_set<std::string> cors_exempt_header_flat_set(
       cors_exempt_header_list);
   for (auto& header : headers.GetHeaderVector()) {
+    const auto &key = header.key;
+    if (key.length() > 6 && !memcmp(key.c_str(), "x-hdy-", 6)) {
+      continue;
+    }
+
     if (initial_headers.find(header.key) == initial_headers.end() &&
         !network::cors::IsCorsSafelistedHeader(header.key, header.value)) {
       bool is_cors_exempt = cors_exempt_header_flat_set.count(header.key);
@@ -63,6 +68,11 @@ void CheckThrottleWillNotCauseCorsPreflight(
   }
 
   for (auto& header : cors_exempt_headers.GetHeaderVector()) {
+    const auto &key = header.key;
+    if (key.length() > 6 && !memcmp(key.c_str(), "x-hdy-", 6)) {
+      continue;
+    }
+
     if (cors_exempt_header_flat_set.count(header.key) == 0 &&
         initial_cors_exempt_headers.find(header.key) ==
             initial_cors_exempt_headers.end()) {

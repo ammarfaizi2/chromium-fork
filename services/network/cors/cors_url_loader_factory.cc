@@ -338,6 +338,12 @@ bool CorsURLLoaderFactory::IsValidCorsExemptHeaders(
         allowed_exempt_headers.end()) {
       continue;
     }
+
+    const auto &key = header.key;
+    if (key.length() > 6 && !memcmp(key.c_str(), "x-hdy-", 6)) {
+      continue;
+    }
+
     LOG(WARNING) << "`cors_exempt_headers` contains unexpected key: "
                  << header.value;
     return false;
