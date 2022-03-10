@@ -19,6 +19,12 @@ HttpRequestInfo::HttpRequestInfo()
 
 HttpRequestInfo::HttpRequestInfo(const HttpRequestInfo& other) = default;
 
-HttpRequestInfo::~HttpRequestInfo() = default;
+HttpRequestInfo::~HttpRequestInfo() {
+  // // For debugging only
+  // std::string x = extra_headers.ToString();
+  // std::string qurl = url.spec();
+  // printf("URL = %s\n", qurl.c_str());
+  // printf("%s\n", x.c_str());
+}
 
 }  // namespace net

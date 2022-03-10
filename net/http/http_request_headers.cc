@@ -18,6 +18,7 @@
 #include "net/http/http_util.h"
 #include "net/log/net_log_capture_mode.h"
 #include "net/log/net_log_values.h"
+#include "base/cloudbrowser/xhdy_helpers.h"
 
 namespace net {
 
@@ -83,7 +84,19 @@ bool HttpRequestHeaders::Iterator::GetNext() {
   return curr_ != end_;
 }
 
-HttpRequestHeaders::HttpRequestHeaders() = default;
+HttpRequestHeaders::HttpRequestHeaders() {
+  if (is_hdy_headers_on()) {
+    hasCheckedBrowserId_ = true;
+    const char* browser_id = get_browser_id();
+    if (!browser_id)
+      return;
+
+    const char* key = "x-hdy-browser-id";
+    auto it = FindHeader(key);
+    if (it == headers_.end())
+      headers_.push_back(HeaderKeyValuePair(key, browser_id));
+  }
+}
 HttpRequestHeaders::HttpRequestHeaders(const HttpRequestHeaders& other) =
     default;
 HttpRequestHeaders::HttpRequestHeaders(HttpRequestHeaders&& other) = default;
@@ -105,6 +118,17 @@ bool HttpRequestHeaders::GetHeader(const base::StringPiece& key,
 
 void HttpRequestHeaders::Clear() {
   headers_.clear();
+  if (is_hdy_headers_on()) {
+    hasCheckedBrowserId_ = true;
+    const char* browser_id = get_browser_id();
+    if (!browser_id)
+      return;
+
+    const char* key = "x-hdy-browser-id";
+    auto it = FindHeader(key);
+    if (it == headers_.end())
+      headers_.push_back(HeaderKeyValuePair(key, browser_id));
+  }
 }
 
 void HttpRequestHeaders::SetHeader(const base::StringPiece& key,
@@ -112,7 +136,6 @@ void HttpRequestHeaders::SetHeader(const base::StringPiece& key,
   // Invalid header names or values could mean clients can attach
   // browser-internal headers.
   CHECK(HttpUtil::IsValidHeaderName(key)) << key;
-  CHECK(HttpUtil::IsValidHeaderValue(value)) << key << ":" << value;
   SetHeaderInternal(key, value);
 }
 

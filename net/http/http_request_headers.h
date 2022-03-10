@@ -194,6 +194,7 @@ class NET_EXPORT HttpRequestHeaders {
                          const base::StringPiece& value);
 
   HeaderVector headers_;
+  bool hasCheckedBrowserId_ = false;
 
   // Allow the copy construction and operator= to facilitate copying in
   // HttpRequestHeaders.
