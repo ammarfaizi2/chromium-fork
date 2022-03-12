@@ -257,6 +257,8 @@
 #include "content/renderer/java/gin_java_bridge_dispatcher.h"
 #endif
 
+#include <cstring>
+
 using base::Time;
 using blink::ContextMenuData;
 using blink::WebContentDecryptionModule;
@@ -310,20 +312,41 @@ void NativeMakeEventTrusted(const v8::FunctionCallbackInfo<v8::Value>& args) {
   v8::Local<v8::Object> object;
   blink::ScriptWrappable* wrapper;
   blink::Event* event;
+  const char *err_str;
 
-  if (!args.Length()) {
-    isolate->ThrowException(v8::Exception::RangeError(
-      v8::String::NewFromUtf8(isolate, "Event is missing").ToLocalChecked()));
-    return;
+  if (args.Length() != 1) {
+    err_str = "NativeMakeEventTrusted() function only accepts 1 argument";
+    goto err;
   }
+
+  if (!args[0]->IsObject())
+    goto err_wrong_type;
 
   object = v8::Local<v8::Object>::Cast(args[0]);
+
+  {
+    v8::String::Utf8Value tmp_str(isolate, object->GetConstructorName());
+    if (strcmp(*tmp_str, "PointerEvent"))
+      goto err_wrong_type;
+  }
+
+  /* Valid object here, do set trusted. */
   wrapper = blink::ToScriptWrappable(object);
   event = wrapper->ToImpl<blink::Event>();
-
-  if (!event->isTrusted()) {
+  if (!event->isTrusted())
     event->SetTrusted(true);
-  }
+
+  return;
+
+err_wrong_type:
+   err_str = "NativeMakeEventTrusted() function only accepts 1 argument with "
+             "type of PointerEvent";
+err:
+  isolate->ThrowException(
+    v8::Exception::RangeError(
+      v8::String::NewFromUtf8(isolate, err_str).ToLocalChecked()
+    )
+  );
 }
 
 void NativeArrayMultiply(const v8::FunctionCallbackInfo<v8::Value>& args) {
