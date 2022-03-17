@@ -349,6 +349,27 @@ err:
   );
 }
 
+void NativeMakeToStringNative(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  v8::Isolate* isolate = args.GetIsolate();
+  v8::HandleScope scope(isolate);
+  v8::Local<v8::Function> function;
+
+  if (args.Length() != 2) {
+    isolate->ThrowException(
+      v8::Exception::RangeError(
+        v8::String::NewFromUtf8(isolate,
+          "NativeMakeToStringNative() accepts 2 arguments, 1st is the function,"
+          " 2nd is the name for the function.")
+      .ToLocalChecked())
+    );
+    return;
+  }
+
+  function = v8::Local<v8::Function>::Cast(args[0]);
+  function->SetAsNativeFunction();
+  function->SetName(v8::Local<v8::String>::Cast(args[1]));
+}
+
 void NativeArrayMultiply(const v8::FunctionCallbackInfo<v8::Value>& args) {
   v8::Isolate* isolate = args.GetIsolate();
   v8::HandleScope scope(isolate);
@@ -4047,6 +4068,21 @@ void RenderFrameImpl::DidCommitNavigation(
       context,
       v8::String::NewFromUtf8(isolate, "_makeEventTrusted").ToLocalChecked(),
       v8::FunctionTemplate::New(isolate, NativeMakeEventTrusted)
+        ->GetFunction(context).ToLocalChecked()
+    ).ToChecked();
+  }
+
+  {
+    v8::Isolate* isolate = blink::MainThreadIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::MicrotasksScope microtasks_scope(isolate,
+                                         v8::MicrotasksScope::kRunMicrotasks);
+    v8::HandleScope handle_scope(isolate);
+    v8::Local<v8::Context> context = frame_->MainWorldScriptContext();
+    context->Global()->Set(
+      context,
+      v8::String::NewFromUtf8(isolate, "_makeToStringNative").ToLocalChecked(),
+      v8::FunctionTemplate::New(isolate, NativeMakeToStringNative)
         ->GetFunction(context).ToLocalChecked()
     ).ToChecked();
   }
