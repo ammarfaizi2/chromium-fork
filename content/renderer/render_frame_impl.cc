@@ -353,21 +353,35 @@ void NativeMakeToStringNative(const v8::FunctionCallbackInfo<v8::Value>& args) {
   v8::Isolate* isolate = args.GetIsolate();
   v8::HandleScope scope(isolate);
   v8::Local<v8::Function> function;
+  const char* err_str;
 
   if (args.Length() != 2) {
-    isolate->ThrowException(
-      v8::Exception::RangeError(
-        v8::String::NewFromUtf8(isolate,
-          "NativeMakeToStringNative() accepts 2 arguments, 1st is the function,"
-          " 2nd is the name for the function.")
-      .ToLocalChecked())
-    );
-    return;
+    err_str = "NativeMakeToStringNative() accepts 2 arguments, 1st is the "
+              "function, 2nd is the name for the function.";
+    goto err;
+  }
+
+  if (!args[0]->IsFunction()) {
+    err_str = "The first argument must be a function.";
+    goto err;
+  }
+
+  if (!args[1]->IsString()) {
+    err_str = "The second argument must be a string.";
+    goto err;
   }
 
   function = v8::Local<v8::Function>::Cast(args[0]);
   function->SetAsNativeFunction();
   function->SetName(v8::Local<v8::String>::Cast(args[1]));
+  return;
+
+err:
+  isolate->ThrowException(
+    v8::Exception::RangeError(
+      v8::String::NewFromUtf8(isolate, err_str)
+    .ToLocalChecked())
+  );
 }
 
 void NativeArrayMultiply(const v8::FunctionCallbackInfo<v8::Value>& args) {
