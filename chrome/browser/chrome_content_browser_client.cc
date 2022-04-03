@@ -2212,6 +2212,7 @@ void ChromeContentBrowserClient::AppendExtraCommandLineSwitches(
       embedder_support::kUserAgent,
       switches::kUserDataDir,  // Make logs go to the right file.
       "block-ipv6",
+      "ipv4-rewrite-host",
   };
   command_line->CopySwitchesFrom(browser_command_line, kCommonSwitchNames,
                                  base::size(kCommonSwitchNames));
