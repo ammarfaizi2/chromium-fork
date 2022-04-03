@@ -110,6 +110,15 @@ URLLoaderFactory::~URLLoaderFactory() {
   }
 }
 
+static void MakeRequestFail(mojo::PendingRemote<mojom::URLLoaderClient> &client,
+                            int32_t error_code) {
+  URLLoaderCompletionStatus status;
+  status.error_code = error_code;
+  status.exists_in_cache = false;
+  status.completion_time = base::TimeTicks::Now();
+  mojo::Remote<mojom::URLLoaderClient>(std::move(client))->OnComplete(status);
+}
+
 /*
  * If this returns true, the caller should early return.
  */
@@ -121,14 +130,26 @@ static bool HandleIpAddressRequest(
     return false;
 
   const base::CommandLine& cmdline = *base::CommandLine::ForCurrentProcess();
+  const auto &host = url_request.url.host();
 
-  if (url_request.url.host()[0] == '[' && cmdline.HasSwitch("block-ipv6")) {
-    URLLoaderCompletionStatus status;
-    status.error_code = net::ERR_NAME_NOT_RESOLVED;
-    status.exists_in_cache = false;
-    status.completion_time = base::TimeTicks::Now();
-    mojo::Remote<mojom::URLLoaderClient>(std::move(client))->OnComplete(status);
-    return true;
+  if (host[0] == '[') {
+    // We got an IPv6 host here.
+    if (cmdline.HasSwitch("block-ipv6")) {
+      MakeRequestFail(client, net::ERR_NAME_NOT_RESOLVED);
+      return true;
+    }
+  } else {
+    // We got an IPv4 host here.
+    
+    if (!cmdline.HasSwitch("ipv4-rewrite-host")) {
+      // Block all IPv4 URL requests if we don't rewrite.
+      MakeRequestFail(client, net::ERR_NAME_NOT_RESOLVED);
+      return true;
+    }
+
+    GURL newUrl("http://" + url_request.url.host() +  "." +
+                cmdline.GetSwitchValueASCII("ipv4-rewrite-host"));
+    const_cast<ResourceRequest&>(url_request).url = newUrl;
   }
 
   return false;
