@@ -134,13 +134,13 @@ ComputeSameSiteContextResult ComputeSameSiteContext(
   bool site_for_cookies_is_same_site =
       is_same_site_with_site_for_cookies(request_url);
 
-  // If the request is a main frame navigation, site_for_cookies must either be
-  // null (for opaque origins, e.g., data: origins) or same-site with the
-  // request URL (both schemefully and schemelessly), and the URL cannot be
-  // ws/wss (these schemes are not navigable).
-  DCHECK(!is_main_frame_navigation || site_for_cookies_is_same_site ||
-         site_for_cookies.IsNull());
-  DCHECK(!is_main_frame_navigation || !request_url.SchemeIsWSOrWSS());
+  // // If the request is a main frame navigation, site_for_cookies must either be
+  // // null (for opaque origins, e.g., data: origins) or same-site with the
+  // // request URL (both schemefully and schemelessly), and the URL cannot be
+  // // ws/wss (these schemes are not navigable).
+  // DCHECK(!is_main_frame_navigation || site_for_cookies_is_same_site ||
+  //        site_for_cookies.IsNull());
+  // DCHECK(!is_main_frame_navigation || !request_url.SchemeIsWSOrWSS());
 
   // Defaults to a cross-site context type.
   ComputeSameSiteContextResult result;
@@ -679,13 +679,13 @@ CookieOptions::SameSiteCookieContext ComputeSameSiteContextForResponse(
 
   DCHECK(!url_chain.empty());
   if (is_main_frame_navigation && !site_for_cookies.IsNull()) {
-    // If the request is a main frame navigation, site_for_cookies must either
-    // be null (for opaque origins, e.g., data: origins) or same-site with the
-    // request URL (both schemefully and schemelessly), and the URL cannot be
-    // ws/wss (these schemes are not navigable).
-    DCHECK(
-        site_for_cookies.IsFirstPartyWithSchemefulMode(url_chain.back(), true));
-    DCHECK(!url_chain.back().SchemeIsWSOrWSS());
+    // // If the request is a main frame navigation, site_for_cookies must either
+    // // be null (for opaque origins, e.g., data: origins) or same-site with the
+    // // request URL (both schemefully and schemelessly), and the URL cannot be
+    // // ws/wss (these schemes are not navigable).
+    // DCHECK(
+    //     site_for_cookies.IsFirstPartyWithSchemefulMode(url_chain.back(), true));
+    // DCHECK(!url_chain.back().SchemeIsWSOrWSS());
     return CookieOptions::SameSiteCookieContext::MakeInclusiveForSet();
   }
 
