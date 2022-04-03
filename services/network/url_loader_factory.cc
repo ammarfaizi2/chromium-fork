@@ -110,6 +110,30 @@ URLLoaderFactory::~URLLoaderFactory() {
   }
 }
 
+/*
+ * If this returns true, the caller should early return.
+ */
+static bool HandleIpAddressRequest(
+  const ResourceRequest& url_request,
+  mojo::PendingRemote<mojom::URLLoaderClient> &client) {
+
+  if (!url_request.url.HostIsIPAddress())
+    return false;
+
+  const base::CommandLine& cmdline = *base::CommandLine::ForCurrentProcess();
+
+  if (url_request.url.host()[0] == '[' && cmdline.HasSwitch("block-ipv6")) {
+    URLLoaderCompletionStatus status;
+    status.error_code = net::ERR_NAME_NOT_RESOLVED;
+    status.exists_in_cache = false;
+    status.completion_time = base::TimeTicks::Now();
+    mojo::Remote<mojom::URLLoaderClient>(std::move(client))->OnComplete(status);
+    return true;
+  }
+
+  return false;
+}
+
 void URLLoaderFactory::CreateLoaderAndStart(
     mojo::PendingReceiver<mojom::URLLoader> receiver,
     int32_t request_id,
@@ -118,17 +142,8 @@ void URLLoaderFactory::CreateLoaderAndStart(
     mojo::PendingRemote<mojom::URLLoaderClient> client,
     const net::MutableNetworkTrafficAnnotationTag& traffic_annotation) {
 
-  const base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
-
-  if (command_line.HasSwitch("block-ipv6") && url_request.url.HostIsIPAddress()
-      && url_request.url.host()[0] == '[') {
-    URLLoaderCompletionStatus status;
-    status.error_code = net::ERR_NAME_RESOLUTION_FAILED;
-    status.exists_in_cache = false;
-    status.completion_time = base::TimeTicks::Now();
-    mojo::Remote<mojom::URLLoaderClient>(std::move(client))->OnComplete(status);
+  if (HandleIpAddressRequest(url_request, client))
     return;
-  }
 
   CreateLoaderAndStartWithSyncClient(
       std::move(receiver), request_id, options, url_request, std::move(client),
@@ -151,6 +166,9 @@ void URLLoaderFactory::CreateLoaderAndStartWithSyncClient(
   // Requests with |trusted_params| when params_->is_trusted is not set should
   // have been rejected at the CorsURLLoader layer.
   DCHECK(!url_request.trusted_params || params_->is_trusted);
+
+  if (HandleIpAddressRequest(url_request, client))
+    return;
 
   std::string origin_string;
   bool has_origin = url_request.headers.GetHeader("Origin", &origin_string) &&
