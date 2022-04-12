@@ -255,24 +255,27 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
   params.mutator_host = animation_host_.get();
   host_ = cc::LayerTreeHost::CreateSingleThreaded(this, std::move(params));
 
-  const base::WeakPtr<cc::CompositorDelegateForInput>& compositor_delegate =
-      host_->GetDelegateForInput();
-  if (base::FeatureList::IsEnabled(features::kUiCompositorScrollWithLayers) &&
-      compositor_delegate) {
-    input_handler_weak_ = cc::InputHandler::Create(*compositor_delegate);
-    scroll_input_handler_ =
-        std::make_unique<ScrollInputHandler>(input_handler_weak_);
-  }
+  // // Task 003
+  // const base::WeakPtr<cc::CompositorDelegateForInput>& compositor_delegate =
+  //     host_->GetDelegateForInput();
+  // if (base::FeatureList::IsEnabled(features::kUiCompositorScrollWithLayers) &&
+  //     compositor_delegate) {
+  //   input_handler_weak_ = cc::InputHandler::Create(*compositor_delegate);
+  //   scroll_input_handler_ =
+  //       std::make_unique<ScrollInputHandler>(input_handler_weak_);
+  // }
 
   animation_timeline_ =
       cc::AnimationTimeline::Create(cc::AnimationIdProvider::NextTimelineId());
   animation_host_->AddAnimationTimeline(animation_timeline_.get());
 
+  // Task 003
   host_->SetRootLayer(root_web_layer_);
 
-  // This shouldn't be done in the constructor in order to match Widget.
-  // See: http://crbug.com/956264.
-  host_->SetVisible(true);
+  // // Task 003 (comment this out)
+  // // This shouldn't be done in the constructor in order to match Widget.
+  // // See: http://crbug.com/956264.
+  // host_->SetVisible(true);
 
   if (base::PowerMonitor::IsInitialized())
     base::PowerMonitor::AddPowerSuspendObserver(this);
