@@ -345,13 +345,16 @@ void Compositor::SetLayerTreeFrameSink(
     viz::mojom::DisplayPrivate* display_private) {
   layer_tree_frame_sink_requested_ = false;
   display_private_ = display_private;
+
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
+
   // Display properties are reset when the output surface is lost, so update it
   // to match the Compositor's.
   if (display_private_) {
     disabled_swap_until_resize_ = false;
     display_private_->Resize(size());
-    display_private_->SetDisplayVisible(host_->IsVisible());
+    // // Task 003
+    display_private_->SetDisplayVisible(true);
     display_private_->SetDisplayColorSpaces(display_color_spaces_);
     display_private_->SetDisplayColorMatrix(
         gfx::Transform(display_color_matrix_));
