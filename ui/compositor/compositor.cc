@@ -303,9 +303,9 @@ Compositor::~Compositor() {
   if (animation_timeline_)
     animation_host_->RemoveAnimationTimeline(animation_timeline_.get());
 
-  // Stop all outstanding draws before telling the ContextFactory to tear
-  // down any contexts that the |host_| may rely upon.
-  host_.reset();
+  // // Stop all outstanding draws before telling the ContextFactory to tear
+  // // down any contexts that the |host_| may rely upon.
+  // host_.reset();
 
   context_factory_->RemoveCompositor(this);
   auto* host_frame_sink_manager = context_factory_->GetHostFrameSinkManager();
