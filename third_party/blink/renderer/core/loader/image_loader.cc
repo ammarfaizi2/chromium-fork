@@ -800,7 +800,8 @@ void ImageLoader::ImageNotifyFinished(ImageResourceContent* content) {
       html_image_element)
     html_image_element->SetImagePolicyViolated();
 
-  DispatchDecodeRequestsIfComplete();
+  // // Task 003
+  // DispatchDecodeRequestsIfComplete();
 
   if (html_image_element)
     LazyImageHelper::RecordMetricsOnLoadFinished(html_image_element);
@@ -988,7 +989,9 @@ void ImageLoader::DecodeRequest::ProcessForTask() {
 
   DCHECK_EQ(state_, kPendingMicrotask);
   state_ = kPendingLoad;
-  loader_->DispatchDecodeRequestsIfComplete();
+
+  // // Task 003
+  // loader_->DispatchDecodeRequestsIfComplete();
 }
 
 void ImageLoader::DecodeRequest::NotifyDecodeDispatched() {
