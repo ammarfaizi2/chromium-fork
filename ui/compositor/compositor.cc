@@ -383,7 +383,7 @@ void Compositor::OnChildResizing() {
 }
 
 void Compositor::ScheduleDraw() {
-  host_->SetNeedsCommit();
+  // host_->SetNeedsCommit();
 }
 
 void Compositor::SetRootLayer(Layer* root_layer) {
