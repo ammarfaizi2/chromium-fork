@@ -255,27 +255,24 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
   params.mutator_host = animation_host_.get();
   host_ = cc::LayerTreeHost::CreateSingleThreaded(this, std::move(params));
 
-  // // Task 003
-  // const base::WeakPtr<cc::CompositorDelegateForInput>& compositor_delegate =
-  //     host_->GetDelegateForInput();
-  // if (base::FeatureList::IsEnabled(features::kUiCompositorScrollWithLayers) &&
-  //     compositor_delegate) {
-  //   input_handler_weak_ = cc::InputHandler::Create(*compositor_delegate);
-  //   scroll_input_handler_ =
-  //       std::make_unique<ScrollInputHandler>(input_handler_weak_);
-  // }
+  const base::WeakPtr<cc::CompositorDelegateForInput>& compositor_delegate =
+      host_->GetDelegateForInput();
+  if (base::FeatureList::IsEnabled(features::kUiCompositorScrollWithLayers) &&
+      compositor_delegate) {
+    input_handler_weak_ = cc::InputHandler::Create(*compositor_delegate);
+    scroll_input_handler_ =
+        std::make_unique<ScrollInputHandler>(input_handler_weak_);
+  }
 
   animation_timeline_ =
       cc::AnimationTimeline::Create(cc::AnimationIdProvider::NextTimelineId());
   animation_host_->AddAnimationTimeline(animation_timeline_.get());
 
-  // Task 003
   host_->SetRootLayer(root_web_layer_);
 
-  // // Task 003 (comment this out)
-  // // This shouldn't be done in the constructor in order to match Widget.
-  // // See: http://crbug.com/956264.
-  // host_->SetVisible(true);
+  // This shouldn't be done in the constructor in order to match Widget.
+  // See: http://crbug.com/956264.
+  host_->SetVisible(true);
 
   if (base::PowerMonitor::IsInitialized())
     base::PowerMonitor::AddPowerSuspendObserver(this);
@@ -303,9 +300,9 @@ Compositor::~Compositor() {
   if (animation_timeline_)
     animation_host_->RemoveAnimationTimeline(animation_timeline_.get());
 
-  // // Stop all outstanding draws before telling the ContextFactory to tear
-  // // down any contexts that the |host_| may rely upon.
-  // host_.reset();
+  // Stop all outstanding draws before telling the ContextFactory to tear
+  // down any contexts that the |host_| may rely upon.
+  host_.reset();
 
   context_factory_->RemoveCompositor(this);
   auto* host_frame_sink_manager = context_factory_->GetHostFrameSinkManager();
@@ -345,16 +342,13 @@ void Compositor::SetLayerTreeFrameSink(
     viz::mojom::DisplayPrivate* display_private) {
   layer_tree_frame_sink_requested_ = false;
   display_private_ = display_private;
-
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
-
   // Display properties are reset when the output surface is lost, so update it
   // to match the Compositor's.
   if (display_private_) {
     disabled_swap_until_resize_ = false;
     display_private_->Resize(size());
-    // // Task 003
-    display_private_->SetDisplayVisible(true);
+    display_private_->SetDisplayVisible(host_->IsVisible());
     display_private_->SetDisplayColorSpaces(display_color_spaces_);
     display_private_->SetDisplayColorMatrix(
         gfx::Transform(display_color_matrix_));
@@ -383,7 +377,7 @@ void Compositor::OnChildResizing() {
 }
 
 void Compositor::ScheduleDraw() {
-  // host_->SetNeedsCommit();
+  host_->SetNeedsCommit();
 }
 
 void Compositor::SetRootLayer(Layer* root_layer) {
@@ -412,18 +406,14 @@ void Compositor::ScheduleFullRedraw() {
   // will also commit.  This should probably just redraw the screen
   // from damage and not commit.  ScheduleDraw/ScheduleRedraw need
   // better names.
-
-  // // Task 003
-  // host_->SetNeedsRedrawRect(host_->device_viewport_rect());
-  // host_->SetNeedsCommit();
+  host_->SetNeedsRedrawRect(host_->device_viewport_rect());
+  host_->SetNeedsCommit();
 }
 
 void Compositor::ScheduleRedrawRect(const gfx::Rect& damage_rect) {
   // TODO(enne): Make this not commit.  See ScheduleFullRedraw.
-
-  // // Task 003
-  // host_->SetNeedsRedrawRect(damage_rect);
-  // host_->SetNeedsCommit();
+  host_->SetNeedsRedrawRect(damage_rect);
+  host_->SetNeedsCommit();
 }
 
 #if defined(OS_WIN)
@@ -458,14 +448,13 @@ void Compositor::SetScaleAndSize(float scale,
   bool device_scale_factor_changed = device_scale_factor_ != scale;
   device_scale_factor_ = scale;
 
-// // Task 003
-// #if DCHECK_IS_ON()
-//   if (size_ != size_in_pixel && local_surface_id.is_valid()) {
-//     // A new LocalSurfaceId must be set when the compositor size changes.
-//     DCHECK_NE(local_surface_id, host_->local_surface_id_from_parent());
-//     DCHECK_NE(local_surface_id, host_->local_surface_id_from_parent());
-//   }
-// #endif  // DECHECK_IS_ON()
+#if DCHECK_IS_ON()
+  if (size_ != size_in_pixel && local_surface_id.is_valid()) {
+    // A new LocalSurfaceId must be set when the compositor size changes.
+    DCHECK_NE(local_surface_id, host_->local_surface_id_from_parent());
+    DCHECK_NE(local_surface_id, host_->local_surface_id_from_parent());
+  }
+#endif  // DECHECK_IS_ON()
 
   // cc requires the size to be non-empty (meaning DCHECKs if size is empty).
   if (!size_in_pixel.IsEmpty()) {
