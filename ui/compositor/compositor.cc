@@ -420,8 +420,10 @@ void Compositor::ScheduleFullRedraw() {
 
 void Compositor::ScheduleRedrawRect(const gfx::Rect& damage_rect) {
   // TODO(enne): Make this not commit.  See ScheduleFullRedraw.
-  host_->SetNeedsRedrawRect(damage_rect);
-  host_->SetNeedsCommit();
+
+  // // Task 003
+  // host_->SetNeedsRedrawRect(damage_rect);
+  // host_->SetNeedsCommit();
 }
 
 #if defined(OS_WIN)
