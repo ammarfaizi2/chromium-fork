@@ -1467,6 +1467,12 @@ RenderFrameHostImpl::RenderFrameHostImpl(
               ui::NativeTheme::PreferredColorScheme::kDark
           ? blink::mojom::PreferredColorScheme::kDark
           : blink::mojom::PreferredColorScheme::kLight;
+
+  if (is_main_frame()) {
+    DLOG(INFO) << "WE ARE A MAIN FRAME";
+  } else {
+    DLOG(INFO) << "WE ARE A SUB FRAME";
+  }
 }
 
 RenderFrameHostImpl::~RenderFrameHostImpl() {
